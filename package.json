@@ -1,37 +1,30 @@
 {
-  "name": "mantes-backend",
-  "version": "1.0.0",
-  "description": "Backend do Sistema Mantes com MongoDB Atlas",
-  "main": "server.js",
+  "name": "mantes",
+  "version": "2.0.0",
+  "description": "Sistema Mantes de Gestão de Manutenção - Nhost + GraphQL",
+  "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node server.js",
-    "start:test": "node server-test.js",
-    "dev": "nodemon server.js",
-    "dev:test": "nodemon server-test.js",
-    "test": "node test-api.js",
-    "test:db": "node test-mongodb.js",
-    "db": "node db-manage.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && vercel deploy --prod"
   },
   "keywords": [
     "mantes",
     "manutencao",
-    "mongodb"
+    "nhost",
+    "graphql"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.0.3",
-    "multer": "^1.4.5-lts.1"
+    "@nhost/nhost-js": "^2.2.21"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "vite": "^5.0.0",
+    "vercel": "^32.0.0"
   }
 }
