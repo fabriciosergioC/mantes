@@ -1,0 +1,2 @@
+# Esta pasta mantém arquivos uploads
+# Os arquivos são gerenciados pelo multer no server.js

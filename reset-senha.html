@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resetar Senha - Mantes</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    color: #e8e8f0;
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .reset-box {
+    background: #111118;
+    border: 1px solid #2a2a3a;
+    border-radius: 2px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: #e8e8f0;
+  }
+  h1 span { color: #ff6b2b; }
+  p {
+    font-size: 12px;
+    color: #6b6b80;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .btn {
+    background: #ff6b2b;
+    color: #fff;
+    border: none;
+    border-radius: 2px;
+    padding: 14px 24px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .btn:hover {
+    background: #ff7d42;
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid #2a2a3a;
+    color: #6b6b80;
+  }
+  .btn-secondary:hover {
+    border-color: #6b6b80;
+    color: #e8e8f0;
+  }
+  .success {
+    background: rgba(45, 212, 160, 0.1);
+    border: 1px solid rgba(45, 212, 160, 0.3);
+    border-radius: 2px;
+    padding: 12px;
+    font-size: 11px;
+    color: #2dd4a0;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .success.show { display: block; }
+  .info {
+    background: rgba(255, 107, 43, 0.05);
+    border: 1px solid rgba(255, 107, 43, 0.15);
+    border-radius: 2px;
+    padding: 12px;
+    font-size: 11px;
+    color: #6b6b80;
+    margin-bottom: 20px;
+    text-align: left;
+    line-height: 1.8;
+  }
+  .info strong { color: #ff6b2b; }
+  .info code {
+    background: rgba(255, 107, 43, 0.1);
+    padding: 2px 6px;
+    border-radius: 2px;
+    color: #ff6b2b;
+  }
+</style>
+</head>
+<body>
+
+<div class="reset-box">
+  <h1>Resetar <span>Senha</span></h1>
+  <p>Redefina a senha de acesso da Área do Líder</p>
+
+  <div class="success" id="successMsg">
+    ✅ Senha resetada com sucesso! Redirecionando...
+  </div>
+
+  <div class="info">
+    <strong>📌 Informações:</strong><br>
+    • Senha padrão: <code>mantes2024</code><br>
+    • A senha fica salva no navegador<br>
+    • Este reset remove a senha salva
+  </div>
+
+  <button class="btn" onclick="resetPassword()">
+    Resetar Senha
+  </button>
+
+  <button class="btn btn-secondary" onclick="window.location.href='lider.html'">
+    Voltar para Área do Líder
+  </button>
+</div>
+
+<script>
+  const PASSWORD_KEY = 'mantes_lider_password';
+
+  function resetPassword() {
+    // Remove senha do localStorage
+    localStorage.removeItem(PASSWORD_KEY);
+    
+    // Remove sessão
+    sessionStorage.removeItem('mantes_lider_logged');
+    
+    // Remove token da API
+    localStorage.removeItem('mantes_api_token');
+    
+    // Mostra mensagem
+    document.getElementById('successMsg').classList.add('show');
+    
+    // Redireciona após 2 segundos
+    setTimeout(() => {
+      window.location.href = 'lider.html';
+    }, 2000);
+  }
+</script>
+
+</body>
+</html>

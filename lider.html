@@ -1,0 +1,2033 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mantes — Painel do Líder</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #ff6b2b;
+    --accent2: #ff9f1c;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --success: #2dd4a0;
+    --error: #ff4757;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --glow: rgba(255, 107, 43, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,107,43,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,107,43,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .header-tag {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-tag::before {
+    content: '';
+    width: 20px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .header-sub {
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--accent); }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* Tabela de O.S. */
+  .os-table-container {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+
+  .os-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .os-table thead {
+    background: var(--surface2);
+  }
+
+  .os-table th {
+    text-align: left;
+    padding: 14px 12px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .os-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  .os-table tbody tr {
+    transition: background 0.2s;
+  }
+
+  .os-table tbody tr:hover {
+    background: var(--surface2);
+  }
+
+  .os-table .os-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .os-table .status-badge {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-weight: 700;
+    display: inline-block;
+  }
+
+  .os-table .status-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+  .os-table .status-accepted { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+  .os-table .status-resolved { background: rgba(45, 212, 160, 0.15); color: var(--success); }
+  .os-table .status-rejected { background: rgba(255, 71, 87, 0.15); color: var(--error); }
+
+  .os-table .actions-cell {
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .os-table .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .os-table .btn-accept {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--info);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+  .os-table .btn-accept:hover { background: var(--info); color: #fff; }
+
+  .os-table .btn-resolve {
+    background: rgba(45, 212, 160, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(45, 212, 160, 0.3);
+  }
+  .os-table .btn-resolve:hover { background: var(--success); color: #fff; }
+
+  .os-table .btn-reject {
+    background: rgba(255, 71, 87, 0.15);
+    color: var(--error);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+  }
+  .os-table .btn-reject:hover { background: var(--error); color: #fff; }
+
+  .os-table .btn-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .truncate {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    z-index: 1000;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 360px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(45,212,160,0.3); }
+  .toast.success .toast-icon { color: var(--success); }
+  .toast.error-toast { border-color: rgba(255,71,87,0.3); }
+  .toast.error-toast .toast-icon { color: var(--error); }
+  .toast-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; }
+  .toast-msg { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+  /* Filters */
+  .filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 10px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+
+  .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* OS List */
+  .os-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .os-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+
+  .os-card:hover { border-color: var(--accent); }
+
+  .os-card.accepted { border-left: 3px solid var(--info); }
+  .os-card.resolved { border-left: 3px solid var(--success); }
+  .os-card.pending { border-left: 3px solid var(--warning); }
+
+  .os-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .os-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .os-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .os-date {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .status-badge {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 2px;
+    font-weight: 700;
+  }
+
+  .status-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+  .status-accepted { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+  .status-resolved { background: rgba(45, 212, 160, 0.15); color: var(--success); }
+
+  .os-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .os-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .os-field-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .os-field-value {
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .os-description {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .os-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .file-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 6px 10px;
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Actions */
+  .os-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+  }
+
+  .btn-accept {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--info);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+  .btn-accept:hover { background: var(--info); color: #fff; }
+
+  .btn-resolve {
+    background: rgba(45, 212, 160, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(45, 212, 160, 0.3);
+  }
+  .btn-resolve:hover { background: var(--success); color: #fff; }
+
+  .btn-reject {
+    background: rgba(255, 71, 87, 0.15);
+    color: var(--error);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+  }
+  .btn-reject:hover { background: var(--error); color: #fff; }
+
+  .btn-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 24px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 32px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: fadeUp 0.3s ease;
+  }
+  
+  .modal::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .modal::-webkit-scrollbar-track {
+    background: var(--surface2);
+    border-radius: 2px;
+  }
+  
+  .modal::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+  
+  .modal::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+  }
+  
+  .modal-details {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  
+  .modal-details::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .modal-details::-webkit-scrollbar-track {
+    background: var(--surface2);
+    border-radius: 2px;
+  }
+  
+  .modal-details::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+  
+  .modal-details::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+  }
+
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .modal textarea {
+    width: 100%;
+    min-height: 100px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 12px;
+    resize: vertical;
+    margin-bottom: 16px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+
+  .btn-cancel {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 10px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-cancel:hover { border-color: var(--muted); color: var(--text); }
+
+  .btn-confirm {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #fff;
+    padding: 10px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 700;
+  }
+  .btn-confirm:hover { background: #ff7d42; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .os-grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Login Screen */
+  .login-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 24px;
+  }
+
+  .login-overlay.hidden { display: none; }
+
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .login-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .login-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .login-field {
+    margin-bottom: 20px;
+  }
+
+  .login-field label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .login-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .login-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--glow);
+  }
+
+  .login-input::placeholder {
+    color: var(--muted);
+  }
+
+  .login-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 2px;
+    padding: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+
+  .login-btn:hover {
+    background: #ff7d42;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(255,107,43,0.3);
+  }
+
+  .login-error {
+    background: rgba(255, 71, 87, 0.1);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    border-radius: 2px;
+    padding: 12px;
+    font-size: 11px;
+    color: var(--error);
+    margin-bottom: 20px;
+    display: none;
+    text-align: center;
+  }
+
+  .login-error.show { display: block; }
+
+  /* User info in header */
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .user-info svg {
+    color: var(--accent);
+  }
+
+  .logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .logout-btn:hover {
+    border-color: var(--error);
+    color: var(--error);
+  }
+
+  .change-password-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .change-password-btn:hover {
+    border-color: var(--info);
+    color: var(--info);
+  }
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2 class="login-title">Área do Líder</h2>
+    <p class="login-subtitle">Digite a senha para acessar o painel</p>
+    
+    <div class="login-error" id="loginError">
+      Senha incorreta. Tente novamente.
+    </div>
+
+    <div class="login-field">
+      <label for="loginPassword">Senha</label>
+      <input type="password" id="loginPassword" class="login-input" placeholder="Digite sua senha" onkeypress="if(event.key==='Enter')doLogin()">
+    </div>
+
+    <button class="login-btn" onclick="doLogin()">
+      Acessar Painel
+    </button>
+
+    <div style="margin-top: 16px; text-align: center;">
+      <a href="reset-senha.html" style="font-size: 11px; color: var(--muted); text-decoration: none;">
+        Esqueci a senha
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <header>
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+      <div>
+        <div class="header-tag">Painel de Controle</div>
+        <h1>Área do <span>Líder</span></h1>
+        <p class="header-sub">Acompanhe e gerencie as Ordens de Serviço</p>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="change-password-btn" onclick="openChangePasswordModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Alterar Senha
+        </button>
+        <button type="button" class="logout-btn" onclick="doLogout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sair
+        </button>
+        <button type="button" class="logout-btn" onclick="refreshData()" title="Recarregar dados">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Atualizar
+        </button>
+        <a href="index.html" class="back-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          Voltar ao Formulário
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">0</div>
+      <div class="stat-label">Total de O.S.</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statPending" style="color: var(--warning)">0</div>
+      <div class="stat-label">Pendentes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statAccepted" style="color: var(--info)">0</div>
+      <div class="stat-label">Enviadas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statResolved" style="color: var(--success)">0</div>
+      <div class="stat-label">Resolvidas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statRejected" style="color: var(--error)">0</div>
+      <div class="stat-label">Rejeitadas</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">Todas</button>
+    <button class="filter-btn" data-filter="pending">Pendentes</button>
+    <button class="filter-btn" data-filter="accepted">Enviadas</button>
+    <button class="filter-btn" data-filter="resolved">Resolvidas</button>
+    <button class="filter-btn" data-filter="rejected">Rejeitadas</button>
+    <div style="width: 1px; height: 24px; background: var(--border); margin: 0 8px;"></div>
+    <select id="tipoFilter" onchange="renderList(currentFilter)" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 16px; font-family: 'DM Mono', monospace; font-size: 11px; border-radius: 2px; outline: none; cursor: pointer;">
+      <option value="">Todos os Tipos</option>
+      <option value="bug_mantes">🐛 Bug / Mantes</option>
+      <option value="sugestao">💡 Sugestões</option>
+    </select>
+    <div style="display: flex; gap: 8px; margin-left: auto; align-items: center;">
+      <input type="text" id="cnpjFilter" placeholder="Filtrar por CNPJ..." maxlength="18" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 16px; font-family: 'DM Mono', monospace; font-size: 11px; border-radius: 2px; outline: none; min-width: 200px;" oninput="applyCNPJMask(this)" onkeypress="if(event.key==='Enter')searchCNPJ()">
+      <button type="button" class="filter-btn active" onclick="searchCNPJ()" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Pesquisar
+      </button>
+      <button type="button" class="filter-btn" onclick="clearCNPJFilter()" title="Limpar filtro" style="padding: 10px 12px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="os-table-container">
+    <table class="os-table">
+      <thead>
+        <tr>
+          <th>O.S.</th>
+          <th>Data/Hora</th>
+          <th>Tipo</th>
+          <th>Cliente</th>
+          <th>CNPJ</th>
+          <th>Telefone</th>
+          <th>Técnico</th>
+          <th>Líder</th>
+          <th>Descrição</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="osTableBody">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal de Observação -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 class="modal-title" id="modalTitle">Adicionar Observação</h3>
+    <textarea id="modalObservacao" placeholder="Digite uma observação sobre esta O.S...."></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" id="btnConfirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Detalhes -->
+<div class="modal-overlay" id="modalDetailsOverlay">
+  <div class="modal modal-details" style="max-width: 700px;">
+    <h3 class="modal-title" id="detailsTitle">Detalhes da O.S.</h3>
+    <div id="detailsContent" style="font-size: 12px; line-height: 1.8;"></div>
+    <div class="modal-actions" style="margin-top: 20px;">
+      <button class="btn-cancel" onclick="closeDetails()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Alterar Senha -->
+<div class="modal-overlay" id="modalChangePasswordOverlay">
+  <div class="modal">
+    <h3 class="modal-title">Alterar Senha</h3>
+    <div class="login-field">
+      <label for="currentPassword">Senha Atual</label>
+      <input type="password" id="currentPassword" class="login-input" placeholder="Digite a senha atual">
+    </div>
+    <div class="login-field">
+      <label for="newPassword">Nova Senha</label>
+      <input type="password" id="newPassword" class="login-input" placeholder="Digite a nova senha">
+    </div>
+    <div class="login-field">
+      <label for="confirmPassword">Confirmar Nova Senha</label>
+      <input type="password" id="confirmPassword" class="login-input" placeholder="Confirme a nova senha">
+    </div>
+    <div class="login-error" id="changePasswordError">
+      Senha incorreta.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeChangePasswordModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="changePassword()">Alterar Senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <svg class="toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="toastIcon">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  <div>
+    <div class="toast-title" id="toastTitle">Sucesso!</div>
+    <div class="toast-msg" id="toastMsg">O.S. atualizada com sucesso.</div>
+  </div>
+</div>
+
+<script>
+  // ── CONFIGURAÇÃO DA API ──────────────────────────────────────
+  // URL dinâmica: localhost, Vercel ou Render
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000/api' 
+    : window.location.hostname.includes('vercel')
+      ? '/api'  // Vercel usa proxy interno
+      : 'https://mantes-backend.onrender.com/api';
+  let authToken = null;
+  let currentUser = null;
+
+  // ── Autenticação ──────────────────────────────────────────────
+  const DEFAULT_PASSWORD = 'mantes2024';
+  const PASSWORD_KEY = 'mantes_lider_password';
+  const SESSION_KEY = 'mantes_lider_logged';
+  const API_TOKEN_KEY = 'mantes_api_token';
+  
+  // Polling para atualização automática (30 segundos)
+  let autoRefreshInterval = null;
+  const AUTO_REFRESH_INTERVAL = 30000;
+
+  console.log('🚀 [1] Script lider.html carregado');
+  console.log('🚀 [2] API_URL:', API_URL);
+  console.log('🚀 [3] localStorage antes do checkAuth:');
+  console.log('   - SESSION_KEY:', sessionStorage.getItem(SESSION_KEY));
+  console.log('   - API_TOKEN_KEY:', localStorage.getItem(API_TOKEN_KEY) ? 'EXISTS' : 'NULL');
+
+  // Verifica se já está logado ao carregar
+  window.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 [4] DOMContentLoaded - chamando checkAuth');
+    checkAuth();
+  });
+
+  // Função para iniciar o polling automático
+  function startAutoRefresh() {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+    }
+    autoRefreshInterval = setInterval(async () => {
+      console.log('🔄 Auto-refresh: Atualizando lista de O.S...');
+      await loadOSFromAPI();
+      await loadStatsFromAPI();
+      renderList(currentFilter);
+    }, AUTO_REFRESH_INTERVAL);
+    console.log('⏰ Auto-refresh iniciado (intervalo: ' + AUTO_REFRESH_INTERVAL + 'ms)');
+  }
+
+  // Função para parar o polling automático
+  function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+      autoRefreshInterval = null;
+      console.log('⏰ Auto-refresh parado');
+    }
+  }
+
+  function checkAuth() {
+    // Verifica sessão local
+    const isLoggedIn = sessionStorage.getItem(SESSION_KEY) === 'true';
+    const overlay = document.getElementById('loginOverlay');
+
+    // Restaura token do localStorage (persiste após refresh)
+    const savedToken = localStorage.getItem(API_TOKEN_KEY);
+    console.log('🔍 checkAuth - savedToken:', savedToken ? 'ENCONTRADO (' + savedToken.substring(0, 20) + '...)' : 'NÃO ENCONTRADO');
+
+    if (savedToken) {
+      authToken = savedToken;
+      console.log('🔑 Token restaurado do localStorage');
+
+      // Se já tem token, carrega dados da API imediatamente
+      if (isLoggedIn) {
+        console.log('📥 Usuário já logado, carregando dados da API...');
+        loadOSFromAPI().then(() => {
+          loadStatsFromAPI();
+          startAutoRefresh(); // Inicia polling automático
+        });
+      }
+    }
+
+    if (!isLoggedIn) {
+      overlay.classList.remove('hidden');
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginError').classList.remove('show');
+    } else {
+      overlay.classList.add('hidden');
+      // Se não tinha token mas está logado, faz login automático
+      if (!savedToken) {
+        console.log('⚠️ Sem token, mas usuário logado - recarregando dados...');
+        loadOSFromAPI().then(() => {
+          loadStatsFromAPI();
+          startAutoRefresh(); // Inicia polling automático
+        });
+      }
+    }
+  }
+
+  async function doLogin() {
+    const password = document.getElementById('loginPassword').value;
+    const storedPassword = localStorage.getItem(PASSWORD_KEY) || DEFAULT_PASSWORD;
+    const overlay = document.getElementById('loginOverlay');
+    const errorEl = document.getElementById('loginError');
+
+    if (password === storedPassword) {
+      sessionStorage.setItem(SESSION_KEY, 'true');
+      overlay.classList.add('hidden');
+      errorEl.classList.remove('show');
+      document.getElementById('loginPassword').value = '';
+      console.log('✅ Login realizado com sucesso');
+
+      // Tenta login na API para carregar dados do MongoDB
+      try {
+        console.log('📡 Tentando login na API...');
+        const res = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'lider@mantes.com', senha: password })
+        });
+
+        console.log('📡 Resposta do login API:', res.status);
+
+        if (res.ok) {
+          const data = await res.json();
+          authToken = data.token;
+          currentUser = data.user;
+          localStorage.setItem(API_TOKEN_KEY, authToken);
+          console.log('🔑 Token salvo:', authToken.substring(0, 20) + '...');
+
+          // Carrega dados da API imediatamente
+          console.log('📥 Carregando dados da API...');
+          await loadOSFromAPI();
+          await loadStatsFromAPI();
+          startAutoRefresh(); // Inicia polling automático
+          console.log('✅ Dados carregados com sucesso!');
+        } else {
+          const err = await res.json();
+          console.warn('⚠️ Login na API falhou:', err.error);
+          // Fallback: carrega do localStorage
+          renderList(currentFilter);
+        }
+      } catch (err) {
+        console.warn('⚠️ API não disponível:', err.message);
+        console.log('📥 Carregando dados locais...');
+        // Fallback: carrega do localStorage
+        renderList(currentFilter);
+      }
+    } else {
+      errorEl.classList.add('show');
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginPassword').focus();
+    }
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(API_TOKEN_KEY);
+    authToken = null;
+    currentUser = null;
+    stopAutoRefresh(); // Para o polling automático
+    window.location.reload();
+  }
+
+  async function refreshData() {
+    console.log('🔄 Atualizando dados...');
+    if (authToken) {
+      await loadOSFromAPI();
+      await loadStatsFromAPI();
+      showToast('Dados atualizados', 'Lista de O.S. recarregada com sucesso!');
+    } else {
+      renderList(currentFilter);
+      showToast('Dados atualizados', 'Lista recarregada!');
+    }
+  }
+
+  function openChangePasswordModal() {
+    document.getElementById('modalChangePasswordOverlay').classList.add('open');
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    document.getElementById('changePasswordError').classList.remove('show');
+  }
+
+  function closeChangePasswordModal() {
+    document.getElementById('modalChangePasswordOverlay').classList.remove('open');
+  }
+
+  async function changePassword() {
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const storedPassword = localStorage.getItem(PASSWORD_KEY) || DEFAULT_PASSWORD;
+    const errorEl = document.getElementById('changePasswordError');
+
+    if (currentPassword !== storedPassword) {
+      errorEl.textContent = 'Senha atual incorreta.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      errorEl.textContent = 'A nova senha deve ter pelo menos 4 caracteres.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      errorEl.textContent = 'As novas senhas não coincidem.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    // Atualiza na API
+    if (authToken) {
+      try {
+        const res = await fetch(`${API_URL}/auth/change-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ senhaAtual: currentPassword, novaSenha: newPassword })
+        });
+        
+        if (res.ok) {
+          localStorage.setItem(PASSWORD_KEY, newPassword);
+          closeChangePasswordModal();
+          showToast('Senha alterada', 'Sua senha foi atualizada com sucesso.', 'success');
+          return;
+        }
+      } catch (err) {
+        console.warn('Erro na API:', err);
+      }
+    }
+
+    // Fallback local
+    localStorage.setItem(PASSWORD_KEY, newPassword);
+    closeChangePasswordModal();
+    showToast('Senha alterada', 'Sua senha foi atualizada com sucesso.', 'success');
+  }
+
+  // ── API: Carregar Ordens de Serviço ──────────────────────────
+  let allOSRecords = [];
+  let currentOS = null;
+  let currentAction = null;
+  let isUpdating = false; // Previne múltiplas atualizações simultâneas
+  let currentFilter = 'all';
+
+  async function loadOSFromAPI() {
+    try {
+      console.log('📡 loadOSFromAPI - authToken:', authToken ? 'DEFINIDO' : 'NÃO DEFINIDO');
+      console.log('📡 loadOSFromAPI - URL:', `${API_URL}/os`);
+      
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+      const res = await fetch(`${API_URL}/os`, { headers });
+
+      console.log('📡 loadOSFromAPI - Status:', res.status);
+
+      if (res.ok) {
+        allOSRecords = await res.json();
+        console.log('✅ loadOSFromAPI -', allOSRecords.length, 'O.S.(s) carregada(s)');
+        renderList(currentFilter);
+      } else {
+        const err = await res.json();
+        console.warn('❌ Erro ao carregar OS da API:', res.status, err);
+      }
+    } catch (err) {
+      console.error('❌ API indisponível:', err.message);
+      console.log('📥 Usando fallback local...');
+    }
+  }
+
+  async function loadStatsFromAPI() {
+    try {
+      const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+      const res = await fetch(`${API_URL}/os/stats`, { headers });
+
+      if (res.ok) {
+        const stats = await res.json();
+        console.log('📊 loadStatsFromAPI - Stats:', stats);
+        document.getElementById('statTotal').textContent = stats.total;
+        document.getElementById('statPending').textContent = stats.pending;
+        document.getElementById('statAccepted').textContent = stats.accepted;
+        document.getElementById('statResolved').textContent = stats.resolved;
+        const statRejected = document.getElementById('statRejected');
+        if (statRejected) statRejected.textContent = stats.rejected;
+      }
+    } catch (err) {
+      console.warn('❌ Erro ao carregar stats:', err);
+    }
+  }
+
+  async function updateOSStatus(osId, status, observacao) {
+    try {
+      console.log('🔄 Atualizando O.S.:', osId, 'para status:', status, '| observacao:', observacao);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      };
+      const res = await fetch(`${API_URL}/os/${osId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ status, observacao })
+      });
+
+      console.log('📡 Resposta da API:', res.status);
+
+      if (res.ok) {
+        const updatedOS = await res.json();
+        console.log('✅ O.S. atualizada, recarregando lista...');
+        console.log('📊 O.S. atualizada:', updatedOS.numero, '| Status:', updatedOS.status);
+        console.log('📝 Observações no registro:', updatedOS.observacoes?.length || 0);
+        await loadOSFromAPI();
+        await loadStatsFromAPI();
+        console.log('📊 Estatísticas atualizadas');
+        return true;
+      } else {
+        const errorData = await res.json();
+        console.error('❌ Erro na API:', errorData);
+        return false;
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar OS:', err);
+      return false;
+    } finally {
+      // Garante que isUpdating seja resetado
+      isUpdating = false;
+    }
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(title, msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    const icon = document.getElementById('toastIcon');
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMsg').textContent = msg;
+    toast.className = 'toast ' + (type === 'error' ? 'error-toast' : 'success');
+    icon.innerHTML = type === 'error'
+      ? '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+      : '<polyline points="20 6 9 17 4 12"/>';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 4000);
+  }
+
+  // ── Filtro por CNPJ ───────────────────────────────────────────
+
+  // Normaliza CNPJ (remove caracteres especiais)
+  function normalizeCNPJ(cnpj) {
+    return cnpj.replace(/\D/g, '');
+  }
+
+  // Aplica máscara de CNPJ no campo de filtro
+  function applyCNPJMask(input) {
+    let v = input.value.replace(/\D/g, '').slice(0, 14);
+    v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+    v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+    v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
+    v = v.replace(/(\d{4})(\d)/, '$1-$2');
+    input.value = v;
+  }
+
+  // Pesquisar CNPJ (acionado pelo botão ou Enter)
+  function searchCNPJ() {
+    renderList(currentFilter);
+  }
+
+  // Limpar filtro de CNPJ
+  function clearCNPJFilter() {
+    document.getElementById('cnpjFilter').value = '';
+    document.getElementById('tipoFilter').value = '';
+    renderList(currentFilter);
+  }
+
+  function filterByCNPJ() {
+    renderList(currentFilter);
+  }
+
+  // ── BroadcastChannel para receber atualizações ───────────────
+  const channel = new BroadcastChannel('mantes_os_channel');
+
+  channel.addEventListener('message', function(e) {
+    if (e.data.type === 'NEW_OS') {
+      console.log('Nova O.S. recebida via BroadcastChannel!');
+      if (authToken) loadOSFromAPI();
+      else renderList(currentFilter);
+    } else if (e.data.type === 'OS_DELETED') {
+      console.log('O.S. excluída recebida via BroadcastChannel!');
+      if (authToken) loadOSFromAPI();
+      else renderList(currentFilter);
+    }
+  });
+
+  // ── Listener do localStorage (funciona entre abas) ───────────
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'mantech_records') {
+      console.log('localStorage atualizado, recarregando lista...');
+      if (authToken) loadOSFromAPI();
+      else renderList(currentFilter);
+    }
+  });
+
+  // ── Refresh ao focar a janela ────────────────────────────────
+  window.addEventListener('focus', function() {
+    console.log('Janela em foco, recarregando dados...');
+    if (authToken) {
+      loadOSFromAPI();
+      loadStatsFromAPI();
+    }
+  });
+
+  // Carregar O.S.
+  function loadOSRecords() {
+    // Sempre usa a API quando estiver autenticado
+    if (authToken) {
+      if (allOSRecords && allOSRecords.length > 0) {
+        console.log('📡 O.S. carregadas da API:', allOSRecords.length, 'registros');
+        return allOSRecords.sort((a, b) => new Date(b.dataAbertura || b.createdAt) - new Date(a.dataAbertura || a.createdAt));
+      }
+      // Se estiver autenticado mas não tiver dados, retorna array vazio (vai recarregar da API)
+      console.log('⚠️ Autenticado mas sem dados da API, retornando vazio');
+      return [];
+    }
+
+    // Fallback para localStorage apenas se não estiver autenticado
+    try {
+      const records = JSON.parse(localStorage.getItem('mantech_records') || '[]');
+      console.log('📦 O.S. carregadas do localStorage:', records.length, 'registros');
+      return records.sort(function(a, b) { return b.timestamp - a.timestamp; });
+    } catch (err) {
+      console.error('Erro ao carregar O.S.:', err);
+      showToast('Erro ao carregar dados', 'Verifique o console para mais detalhes.', 'error');
+      return [];
+    }
+  }
+
+  // Salvar alterações
+  function saveOSRecords(records) {
+    try {
+      localStorage.setItem('mantech_records', JSON.stringify(records));
+      console.log('O.S. salvas no localStorage:', records.length, 'registros');
+    } catch (err) {
+      console.error('Erro ao salvar O.S.:', err);
+      showToast('Erro ao salvar', 'Não foi possível salvar as alterações.', 'error');
+    }
+  }
+
+  // Atualizar estatísticas
+  function updateStats(records) {
+    const total = records.length;
+    const pending = records.filter(r => r.status === 'pending' || !r.status).length;
+    const accepted = records.filter(r => r.status === 'accepted').length;
+    const resolved = records.filter(r => r.status === 'resolved').length;
+    const rejected = records.filter(r => r.status === 'rejected').length;
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statPending').textContent = pending;
+    document.getElementById('statAccepted').textContent = accepted;
+    document.getElementById('statResolved').textContent = resolved;
+
+    // Adicionar estat de rejeitadas se existir o elemento
+    const statRejected = document.getElementById('statRejected');
+    if (statRejected) {
+      statRejected.textContent = rejected;
+    }
+  }
+
+  // Atualizar estatísticas com filtros aplicados
+  function updateStatsFiltered(allRecords, filteredRecords, currentFilter) {
+    const total = filteredRecords.length;
+    
+    // Conta apenas os registros filtrados por status
+    let pending = 0, accepted = 0, resolved = 0, rejected = 0;
+    
+    if (currentFilter === 'all') {
+      pending = filteredRecords.filter(r => r.status === 'pending' || !r.status).length;
+      accepted = filteredRecords.filter(r => r.status === 'accepted').length;
+      resolved = filteredRecords.filter(r => r.status === 'resolved').length;
+      rejected = filteredRecords.filter(r => r.status === 'rejected').length;
+    } else if (currentFilter === 'pending') {
+      pending = filteredRecords.length;
+    } else if (currentFilter === 'accepted') {
+      accepted = filteredRecords.length;
+    } else if (currentFilter === 'resolved') {
+      resolved = filteredRecords.length;
+    } else if (currentFilter === 'rejected') {
+      rejected = filteredRecords.length;
+    }
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statPending').textContent = pending;
+    document.getElementById('statAccepted').textContent = accepted;
+    document.getElementById('statResolved').textContent = resolved;
+
+    const statRejected = document.getElementById('statRejected');
+    if (statRejected) {
+      statRejected.textContent = rejected;
+    }
+  }
+
+  // Renderizar lista
+  function renderList(filter = 'all') {
+    const records = loadOSRecords();
+    const tbody = document.getElementById('osTableBody');
+    const cnpjFilterValue = document.getElementById('cnpjFilter').value.trim();
+    const cnpjFilterNormalized = normalizeCNPJ(cnpjFilterValue);
+    const tipoFilterValue = document.getElementById('tipoFilter').value;
+
+    let filtered = records;
+
+    // Aplica filtro de status (guia selecionada)
+    if (filter === 'pending') {
+      filtered = records.filter(r => r.status === 'pending' || !r.status);
+    } else if (filter === 'accepted') {
+      filtered = records.filter(r => r.status === 'accepted');
+    } else if (filter === 'resolved') {
+      filtered = records.filter(r => r.status === 'resolved');
+    } else if (filter === 'rejected') {
+      filtered = records.filter(r => r.status === 'rejected');
+    }
+
+    // Aplica filtro de tipo (Bug/Sugestão)
+    if (tipoFilterValue) {
+      filtered = filtered.filter(r => (r.tipoSolicitacao || r.tipo || 'bug_mantes') === tipoFilterValue);
+    }
+
+    // Aplica filtro de CNPJ (se houver)
+    if (cnpjFilterNormalized) {
+      filtered = filtered.filter(r => {
+        const cnpjOriginal = r.cnpj || '';
+        const cnpjNormalizado = normalizeCNPJ(cnpjOriginal);
+        return cnpjOriginal.toLowerCase().includes(cnpjFilterValue.toLowerCase()) ||
+               cnpjNormalizado.includes(cnpjFilterNormalized);
+      });
+    }
+
+    // Atualiza estatísticas com os registros filtrados
+    updateStatsFiltered(records, filtered, filter);
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="11" style="text-align: center; padding: 60px 20px; color: var(--muted);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 16px; opacity: 0.3;">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+              <path d="M9 14l2 2 4-4"/>
+            </svg>
+            <p>Nenhuma O.S. encontrada</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = '';
+    filtered.forEach(record => {
+      // Suporta formato da API e localStorage
+      const osNumero = record.numero || record.os_numero;
+      const cliente = record.nomeCliente || record.cliente;
+      const tecnico = record.nomeTecnico || record.tecnico;
+      const tipo = record.tipoSolicitacao || record.tipo || 'bug_mantes';
+      const status = record.status || 'pending';
+      const dataAbertura = record.dataAbertura ? new Date(record.dataAbertura) : new Date(record.timestamp);
+      
+      const statusLabel = status === 'resolved' ? 'Resolvida' : status === 'accepted' ? 'Enviada' : status === 'rejected' ? 'Rejeitada' : 'Pendente';
+      const statusClass = status === 'resolved' ? 'status-resolved' : status === 'accepted' ? 'status-accepted' : status === 'rejected' ? 'status-rejected' : 'status-pending';
+      const tipoLabel = tipo === 'bug_mantes' ? '🐛 Bug / Mantes' : '💡 Sugestão';
+      const tipoBg = tipo === 'bug_mantes' ? 'rgba(255, 71, 87, 0.15)' : 'rgba(59, 130, 246, 0.15)';
+      const tipoColor = tipo === 'bug_mantes' ? 'var(--error)' : 'var(--info)';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="os-num">${osNumero}</span></td>
+        <td>${dataAbertura.toLocaleString('pt-BR')}</td>
+        <td><span style="background: ${tipoBg}; color: ${tipoColor}; padding: 4px 10px; border-radius: 2px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">${tipoLabel}</span></td>
+        <td class="truncate" title="${cliente}">${cliente}</td>
+        <td class="truncate" title="${record.cnpj}">${record.cnpj}</td>
+        <td>${record.telefone}</td>
+        <td class="truncate" title="${tecnico}">${tecnico}</td>
+        <td class="truncate" title="${record.lider}">${record.lider}</td>
+        <td class="truncate" title="${record.descricao}" style="max-width: 250px;">${record.descricao.substring(0, 80)}${record.descricao.length > 80 ? '...' : ''}</td>
+        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+        <td>
+          <div class="actions-cell">
+            <button class="action-btn" style="background: var(--surface2); color: var(--text); border: 1px solid var(--border);"
+              onclick="viewDetails('${osNumero}')"
+              title="Ver Detalhes">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="action-btn" style="background: rgba(255,107,43,0.15); color: var(--accent); border: 1px solid rgba(255,107,43,0.3);"
+              onclick="exportSingleOS('${osNumero}')"
+              title="Exportar esta O.S.">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button class="action-btn btn-accept ${status !== 'pending' && status !== 'accepted' ? 'btn-disabled' : ''}"
+              onclick="openModal('${osNumero}', 'accept')"
+              ${status === 'resolved' || status === 'rejected' ? 'disabled' : ''}
+              title="${status === 'accepted' ? 'Enviada' : 'Enviar'}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <button class="action-btn btn-resolve ${status !== 'accepted' ? 'btn-disabled' : ''}"
+              onclick="openModal('${osNumero}', 'resolve')"
+              ${status !== 'accepted' ? 'disabled' : ''}
+              title="${status === 'resolved' ? 'Resolvida' : 'Marcar como Resolvida'}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </button>
+            <button class="action-btn btn-reject ${status !== 'pending' ? 'btn-disabled' : ''}"
+              onclick="openModal('${osNumero}', 'reject')"
+              ${status !== 'pending' ? 'disabled' : ''}
+              title="Rejeitar">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Abrir modal
+  function openModal(osNumero, action) {
+    currentOS = osNumero;
+    currentAction = action;
+    console.log('openModal chamado:', osNumero, action);
+    
+    const modal = document.getElementById('modalOverlay');
+    const title = document.getElementById('modalTitle');
+    const textarea = document.getElementById('modalObservacao');
+
+    if (action === 'accept') {
+      title.textContent = `Enviar ${osNumero}`;
+      textarea.placeholder = 'Adicione uma observação (opcional)...';
+      textarea.value = '';
+    } else if (action === 'resolve') {
+      title.textContent = `Resolver ${osNumero}`;
+      textarea.placeholder = 'Descreva como foi resolvida...';
+      textarea.value = '';
+    } else if (action === 'reject') {
+      title.textContent = `Rejeitar ${osNumero}`;
+      textarea.placeholder = 'Informe o motivo da rejeição...';
+      textarea.value = '';
+    }
+
+    modal.classList.add('open');
+    textarea.focus();
+  }
+
+  // Fechar modal
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    currentOS = null;
+    currentAction = null;
+  }
+
+  // Confirmar ação
+  document.getElementById('btnConfirm').addEventListener('click', async function() {
+    // Previne múltiplas atualizações simultâneas
+    if (isUpdating) {
+      console.log('⚠️ Atualização já em andamento, ignorando...');
+      return;
+    }
+    
+    if (!currentOS || !currentAction) {
+      console.error('currentOS ou currentAction não definidos!', currentOS, currentAction);
+      showToast('Erro', 'O.S. ou ação não identificada.', 'error');
+      return;
+    }
+
+    isUpdating = true;
+    console.log('🔵 Confirmando ação:', currentAction, 'para O.S.:', currentOS);
+    console.log('🔑 authToken:', authToken ? 'DEFINIDO' : 'NÃO DEFINIDO');
+    console.log('📦 allOSRecords:', allOSRecords.length, 'registros');
+
+    var observacao = document.getElementById('modalObservacao').value.trim();
+    var statusMap = { accept: 'accepted', resolve: 'resolved', reject: 'rejected' };
+    var actionNames = { accept: 'Enviada', resolve: 'Resolvida', reject: 'Rejeitada' };
+
+    // Tenta usar a API primeiro
+    if (authToken && allOSRecords.length > 0) {
+      const record = allOSRecords.find(r => (r.numero || r.os_numero) === currentOS);
+      console.log('🔍 Record encontrado:', record ? record._id : 'NÃO ENCONTRADO');
+
+      if (record) {
+        const success = await updateOSStatus(record._id, statusMap[currentAction], observacao);
+        if (success) {
+          showToast('O.S. ' + actionNames[currentAction], currentOS + ' foi ' + actionNames[currentAction].toLowerCase() + ' com sucesso!');
+          closeModal();
+          // isUpdating será resetado pela função updateOSStatus no finally
+          return;
+        } else {
+          console.warn('⚠️ Falha ao atualizar via API, usando fallback local');
+        }
+      }
+    } else {
+      console.log('⚠️ Usando fallback local (sem authToken ou allOSRecords vazio)');
+    }
+
+    // Fallback para localStorage
+    var records = [];
+    try {
+      records = JSON.parse(localStorage.getItem('mantech_records') || '[]');
+    } catch (err) {
+      console.error('Erro ao ler registros:', err);
+      showToast('Erro', 'Não foi possível carregar os dados.', 'error');
+      return;
+    }
+
+    var recordIndex = records.findIndex(function(r) { return r.os_numero === currentOS; });
+    if (recordIndex === -1) {
+      console.error('O.S. não encontrada:', currentOS);
+      showToast('Erro', 'O.S. ' + currentOS + ' não encontrada!', 'error');
+      return;
+    }
+
+    if (currentAction === 'accept') {
+      records[recordIndex].status = 'accepted';
+      records[recordIndex].observacao = observacao || 'O.S. aceita pelo líder.';
+      records[recordIndex].dataAceitacao = new Date().toISOString();
+    } else if (currentAction === 'resolve') {
+      records[recordIndex].status = 'resolved';
+      records[recordIndex].observacao = observacao || 'O.S. resolvida.';
+      records[recordIndex].dataResolucao = new Date().toISOString();
+    } else if (currentAction === 'reject') {
+      records[recordIndex].status = 'rejected';
+      records[recordIndex].observacao = observacao || 'O.S. rejeitada.';
+      records[recordIndex].dataRejeicao = new Date().toISOString();
+    }
+
+    console.log('Registro atualizado:', records[recordIndex]);
+
+    // Salva no localStorage
+    try {
+      localStorage.setItem('mantech_records', JSON.stringify(records));
+      console.log('O.S. salva com sucesso!');
+    } catch (err) {
+      console.error('Erro ao salvar:', err);
+      showToast('Erro', 'Não foi possível salvar a alteração.', 'error');
+      return;
+    }
+
+    // Mostra mensagem de confirmação com toast
+    showToast('O.S. ' + actionNames[currentAction], currentOS + ' foi ' + actionNames[currentAction].toLowerCase() + ' com sucesso!');
+
+    // Fecha modal e recarrega a lista
+    closeModal();
+
+    // Recarrega os dados (API ou localStorage)
+    if (authToken) {
+      await loadOSFromAPI();
+      await loadStatsFromAPI();
+    } else {
+      renderList(currentFilter);
+      // Atualiza stats manualmente
+      const total = records.length;
+      const pending = records.filter(r => r.status === 'pending' || !r.status).length;
+      const accepted = records.filter(r => r.status === 'accepted').length;
+      const resolved = records.filter(r => r.status === 'resolved').length;
+      const rejected = records.filter(r => r.status === 'rejected').length;
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statPending').textContent = pending;
+      document.getElementById('statAccepted').textContent = accepted;
+      document.getElementById('statResolved').textContent = resolved;
+      const statRejected = document.getElementById('statRejected');
+      if (statRejected) statRejected.textContent = rejected;
+    }
+    
+    // Reset flag de atualização
+    isUpdating = false;
+  });
+
+  // Filtros
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      currentFilter = this.dataset.filter;
+      renderList(currentFilter);
+    });
+  });
+
+  // Fechar modal ao clicar fora
+  document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Inicializar
+  console.log('Inicializando lider.html...');
+  // Não carrega aqui, espera o login
+
+  // ── Exportar Dados ────────────────────────────────────────────
+  function exportSingleOS(osNumero) {
+    var records = loadOSRecords();
+    var record = records.find(function(r) { return (r.numero || r.os_numero) === osNumero; });
+
+    if (!record) {
+      showToast('Erro ao exportar', 'O.S. não encontrada.', 'error');
+      return;
+    }
+
+    console.log('exportSingleOS - O.S.:', osNumero);
+    
+    // Verifica se tem arquivos em Base64 (localStorage) ou URL (API)
+    var hasFiles = (record.filesData && record.filesData.length > 0) || (record.arquivos && record.arquivos.length > 0);
+    
+    if (!hasFiles) {
+      showToast('Sem anexos', 'Esta O.S. não possui arquivos anexados.', 'error');
+      return;
+    }
+
+    // Arquivos em Base64 (localStorage)
+    if (record.filesData && record.filesData.length > 0) {
+      var filesToDownload = record.filesData.filter(function(fileData) {
+        return fileData.name.indexOf('00006') === -1;
+      });
+
+      if (filesToDownload.length === 0) {
+        showToast('Sem arquivos para exportar', 'Esta O.S. só possui arquivos "00006".', 'error');
+        return;
+      }
+
+      filesToDownload.forEach(function(fileData, index) {
+        setTimeout(function() {
+          downloadFile(fileData);
+        }, index * 300);
+      });
+      showToast('Arquivos exportados', filesToDownload.length + ' arquivo(s) baixado(s)!', 'success');
+    }
+    
+    // Arquivos com URL (API)
+    if (record.arquivos && record.arquivos.length > 0) {
+      record.arquivos.forEach(function(file, index) {
+        if (file.url && file.nome.indexOf('00006') === -1) {
+          setTimeout(function() {
+            downloadFileFromURL(file.url, file.nome);
+          }, index * 300);
+        }
+      });
+      showToast('Arquivos exportados', record.arquivos.length + ' arquivo(s) baixado(s)!', 'success');
+    }
+  }
+
+  // Baixar arquivo individual (Base64)
+  function downloadFile(fileData) {
+    const link = document.createElement('a');
+    link.href = fileData.data;
+    link.download = fileData.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  
+  // Baixar arquivo de URL
+  function downloadFileFromURL(url, filename) {
+    fetch(url)
+      .then(res => res.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      })
+      .catch(err => console.error('Erro ao baixar arquivo:', err));
+  }
+
+  // ── Ver Detalhes da O.S. ─────────────────────────────────────
+  async function viewDetails(osNumero) {
+    console.log('🔍 viewDetails - Buscando O.S.:', osNumero);
+    
+    // Tenta buscar os dados mais recentes da API primeiro
+    let record = null;
+    let fromAPI = false;
+    
+    if (authToken) {
+      try {
+        // Busca todas as OS da API para encontrar a correta
+        const headers = { 'Authorization': `Bearer ${authToken}` };
+        const res = await fetch(`${API_URL}/os`, { headers });
+        
+        if (res.ok) {
+          const allOS = await res.json();
+          record = allOS.find(os => os.numero === osNumero);
+          fromAPI = record !== null;
+          console.log('📡 viewDetails - Dados da API:', fromAPI ? 'ENCONTRADOS' : 'NÃO ENCONTRADOS');
+        }
+      } catch (err) {
+        console.warn('⚠️ Erro ao buscar da API, usando fallback local:', err);
+      }
+    }
+    
+    // Fallback: busca nos dados locais (allOSRecords ou localStorage)
+    if (!record) {
+      var records = loadOSRecords();
+      for (var i = 0; i < records.length; i++) {
+        if ((records[i].numero || records[i].os_numero) === osNumero) {
+          record = records[i];
+          break;
+        }
+      }
+      console.log('📦 viewDetails - Dados do fallback:', record ? 'ENCONTRADOS' : 'NÃO ENCONTRADOS');
+    }
+    
+    if (!record) {
+      showToast('Erro', 'O.S. não encontrada.', 'error');
+      return;
+    }
+
+    var status = record.status || 'pending';
+    var osNumeroDisplay = record.numero || record.os_numero;
+    var statusLabel;
+    if (status === 'resolved') {
+      statusLabel = 'Resolvida';
+    } else if (status === 'accepted') {
+      statusLabel = 'Enviada';
+    } else if (status === 'rejected') {
+      statusLabel = 'Rejeitada';
+    } else {
+      statusLabel = 'Pendente';
+    }
+
+    // Corrige leitura das observações: MongoDB usa array 'observacoes', localStorage usa 'observacao'
+    var textoObservacao = '';
+    if (record.observacoes && Array.isArray(record.observacoes) && record.observacoes.length > 0) {
+      // Vem da API/MongoDB: pega a última observação do array
+      textoObservacao = record.observacoes[record.observacoes.length - 1].texto;
+    } else if (record.observacao) {
+      // Vem do localStorage: campo singular
+      textoObservacao = record.observacao;
+    }
+    if (!textoObservacao || textoObservacao.trim() === '') {
+      textoObservacao = 'Sem observação registrada.';
+    }
+
+    var html = '';
+
+    html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">';
+    html += '<div>';
+    html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;">Número da O.S.</div>';
+    html += '<div style="color: var(--accent); font-family: \'Syne\', sans-serif; font-weight: 800; font-size: 18px;">' + osNumeroDisplay + '</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;">Status</div>';
+    html += '<div><span class="status-badge status-' + status + '">' + statusLabel + '</span></div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;">Data de Abertura</div>';
+    html += '<div>' + (record.dataAbertura ? new Date(record.dataAbertura).toLocaleString('pt-BR') : new Date(record.timestamp).toLocaleString('pt-BR')) + '</div>';
+    html += '</div>';
+    if (record.dataAceitacao) {
+      html += '<div>';
+      html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;">Data de Aceitação</div>';
+      html += '<div>' + new Date(record.dataAceitacao).toLocaleString('pt-BR') + '</div>';
+      html += '</div>';
+    }
+    if (record.dataResolucao) {
+      html += '<div>';
+      html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;">Data de Resolução</div>';
+      html += '<div>' + new Date(record.dataResolucao).toLocaleString('pt-BR') + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Tipo de Solicitação
+    var tipo = record.tipoSolicitacao || record.tipo || 'bug_mantes';
+    var tipoLabel = tipo === 'bug_mantes' ? '🐛 Bug / Mantes' : '💡 Sugestão de Melhoria';
+    var tipoColor = tipo === 'bug_mantes' ? 'var(--error)' : 'var(--info)';
+    html += '<div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px;">';
+    html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">Tipo de Solicitação</div>';
+    html += '<div style="background: ' + (tipo === 'bug_mantes' ? 'rgba(255, 71, 87, 0.1)' : 'rgba(59, 130, 246, 0.1)') + '; border: 1px solid ' + (tipo === 'bug_mantes' ? 'rgba(255, 71, 87, 0.2)' : 'rgba(59, 130, 246, 0.2)') + '; border-radius: 2px; padding: 12px; color: ' + tipoColor + '; font-weight: 700; font-size: 12px;">' + tipoLabel + '</div>';
+    html += '</div>';
+
+    html += '<div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px;">';
+    html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">Dados do Cliente</div>';
+    html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">';
+    html += '<div><div style="color: var(--muted); font-size: 10px;">ID Cliente</div><div>' + (record.clienteId || record.cliente_id || '—') + '</div></div>';
+    html += '<div><div style="color: var(--muted); font-size: 10px;">CNPJ</div><div>' + (record.cnpj || '—') + '</div></div>';
+    html += '<div><div style="color: var(--muted); font-size: 10px;">Nome do Cliente</div><div>' + (record.nomeCliente || record.cliente || '—') + '</div></div>';
+    html += '<div><div style="color: var(--muted); font-size: 10px;">Telefone</div><div>' + (record.telefone || '—') + '</div></div>';
+    html += '</div></div>';
+
+    html += '<div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px;">';
+    html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">Equipe Técnica</div>';
+    html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">';
+    html += '<div><div style="color: var(--muted); font-size: 10px;">Técnico Responsável</div><div>' + (record.nomeTecnico || record.tecnico || '—') + '</div></div>';
+    html += '<div><div style="color: var(--muted); font-size: 10px;">Líder da Equipe</div><div>' + (record.lider || '—') + '</div></div>';
+    html += '<div><div style="color: var(--muted); font-size: 10px;">E-mail do Líder</div><div>' + (record.emailLider || record.to_email || '—') + '</div></div>';
+    html += '</div></div>';
+
+    html += '<div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px;">';
+    html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">Descrição</div>';
+    html += '<div style="background: var(--surface2); padding: 12px; border-radius: 2px; border: 1px solid var(--border);">' + (record.descricao || 'Sem descrição') + '</div>';
+    html += '</div>';
+
+    // Caixa de Observação do Líder - sempre exibida para O.S. aceitas, resolvidas ou rejeitadas
+    if (status === 'accepted' || status === 'resolved' || status === 'rejected') {
+      html += '<div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px;">';
+      html += '<div style="color: var(--accent); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">Observação do Líder</div>';
+      html += '<div style="background: rgba(255,107,43,0.05); padding: 12px; border-radius: 2px; border: 1px solid rgba(255,107,43,0.15);">' + textoObservacao + '</div>';
+      html += '</div>';
+    }
+
+    if ((record.arquivos || record.anexos || record.files || []).length > 0) {
+      html += '<div style="border-top: 1px solid var(--border); padding-top: 16px;">';
+      html += '<div style="color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">Anexos</div>';
+      html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+      var anexos = record.arquivos || record.anexos || record.files || [];
+      for (var i = 0; i < anexos.length; i++) {
+        var nomeArquivo = anexos[i].nome || anexos[i].name || anexos[i];
+        html += '<span class="file-tag">' + nomeArquivo + '</span>';
+      }
+      html += '</div></div>';
+    }
+
+    var content = document.getElementById('detailsContent');
+    content.innerHTML = html;
+
+    document.getElementById('modalDetailsOverlay').classList.add('open');
+  }
+
+  // ── Fechar Detalhes ───────────────────────────────────────────
+  function closeDetails() {
+    document.getElementById('modalDetailsOverlay').classList.remove('open');
+  }
+
+  // Fechar modal ao clicar fora
+  document.getElementById('modalDetailsOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeDetails();
+  });
+</script>
+
+</body>
+</html>

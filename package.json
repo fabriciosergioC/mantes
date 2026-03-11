@@ -1,0 +1,37 @@
+{
+  "name": "mantes-backend",
+  "version": "1.0.0",
+  "description": "Backend do Sistema Mantes com MongoDB Atlas",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "start:test": "node server-test.js",
+    "dev": "nodemon server.js",
+    "dev:test": "nodemon server-test.js",
+    "test": "node test-api.js",
+    "test:db": "node test-mongodb.js",
+    "db": "node db-manage.js"
+  },
+  "keywords": [
+    "mantes",
+    "manutencao",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.0.3",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
