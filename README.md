@@ -8,7 +8,7 @@ Sistema de abertura e gerenciamento de Ordens de Serviço (O.S.) para manutenç�
 
 **Backend:**
 - Node.js + Express
-- MongoDB Atlas (banco de dados na nuvem)
+- PostgreSQL (Render)
 - JWT (autenticação)
 - Multer (upload de arquivos)
 
@@ -17,7 +17,7 @@ Sistema de abertura e gerenciamento de Ordens de Serviço (O.S.) para manutenç�
 - Design responsivo e moderno
 
 **Deploy:**
-- Render (backend + frontend)
+- Render (backend + frontend + banco)
 
 ---
 
@@ -29,26 +29,22 @@ Sistema de abertura e gerenciamento de Ordens de Serviço (O.S.) para manutenç�
 npm install
 ```
 
-### 2. Configurar MongoDB Atlas
-
-1. Crie conta em https://cloud.mongodb.com
-2. Crie um cluster gratuito (M0)
-3. Crie usuário em **Database Access**
-4. Libere IP em **Network Access** → 0.0.0.0/0
-5. Copie a string de conexão
-
-### 3. Configurar variáveis de ambiente
+### 2. Configurar variáveis de ambiente
 
 ```bash
 cp .env.example .env
 ```
 
-Edite `.env` com sua string do MongoDB:
+Edite `.env` com sua conexão PostgreSQL:
 ```env
-MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/mantes
+DATABASE_URL=postgresql://usuario:senha@host/mantes
 JWT_SECRET=sua_chave_secreta
 PORT=3000
 ```
+
+### 3. Criar tabelas no banco
+
+Execute o conteúdo de `database.sql` no seu PostgreSQL.
 
 ### 4. Rodar em desenvolvimento
 
@@ -64,11 +60,11 @@ O sistema abrirá em http://localhost:3000
 
 ```
 mantes/
-├── server.js           # Backend Express + MongoDB
+├── server.js           # Backend Express + PostgreSQL
 ├── main.js             # Lógica do frontend
 ├── index.html          # Formulário de abertura de O.S.
 ├── lider.html          # Painel do líder
-├── reset-senha.html    # Reset de senha
+├── database.sql        # Script para criar tabelas
 ├── package.json        # Dependências
 ├── render.yaml         # Configuração Render
 ├── .env.example        # Modelo de variáveis
@@ -109,26 +105,29 @@ npm run dev        # Desenvolvimento
 
 ## 🚀 Deploy no Render
 
-### Opção 1: Usando render.yaml (Automático)
+### 1. Criar PostgreSQL
 
-1. Acesse https://render.com
-2. Login com GitHub
-3. **New +** → **Blueprint**
-4. Conecte seu repositório
-5. O Render lê `render.yaml` automaticamente
+1. https://render.com → Login
+2. **New +** → **PostgreSQL**
+3. Nome: `mantesdb`, Region: Oregon, Plan: Free
 
-### Opção 2: Manual
+### 2. Criar Tabelas
 
-**Backend:**
+1. Dashboard do PostgreSQL → **SQL**
+2. Cole o conteúdo de `database.sql`
+3. Run
+
+### 3. Deploy Backend
+
 1. **New +** → **Web Service**
-2. Build: `npm install`
-3. Start: `npm start`
-4. Adicione variáveis: `MONGODB_URI`, `JWT_SECRET`
+2. Conecte repositório `mantes`
+3. Build: `npm install`, Start: `npm start`
+4. Variáveis: `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV`
 
-**Frontend:**
+### 4. Deploy Frontend
+
 1. **New +** → **Static Site**
-2. Build: `echo "Sem build"`
-3. Publish: `.`
+2. Build: `echo "Sem build"`, Publish: `.`
 
 **Guia completo:** `DEPLOY-RENDER.md`
 
@@ -149,8 +148,8 @@ No primeiro acesso, use qualquer email/senha. O sistema cria o usuário automati
   "dotenv": "^16.3.1",
   "express": "^4.18.2",
   "jsonwebtoken": "^9.0.2",
-  "mongoose": "^8.0.3",
-  "multer": "^1.4.5-lts.1"
+  "multer": "^1.4.5-lts.1",
+  "pg": "^8.11.3"
 }
 ```
 
@@ -158,7 +157,7 @@ No primeiro acesso, use qualquer email/senha. O sistema cria o usuário automati
 
 ## 🎯 Funcionalidades
 
-- ✅ MongoDB Atlas na nuvem
+- ✅ PostgreSQL no Render
 - ✅ Upload de arquivos (até 10MB)
 - ✅ Autenticação JWT
 - ✅ Status: Pendente, Aceita, Resolvida, Rejeitada
@@ -171,23 +170,24 @@ No primeiro acesso, use qualquer email/senha. O sistema cria o usuário automati
 ## ⚠️ Importante
 
 - **Nunca commit o arquivo `.env`** no Git
-- Em produção, use IPs específicos no MongoDB Atlas
 - Use uma **JWT_SECRET** forte
+- Backup do banco periodicamente
 
 ---
 
 ## 📝 Deploy Rápido
 
 ```bash
-# 1. MongoDB Atlas
-https://cloud.mongodb.com → Criar cluster → Copiar URI
+# 1. Render PostgreSQL
+https://render.com → New PostgreSQL
 
-# 2. Render
-https://render.com → Import projeto → Conectar MongoDB
+# 2. Criar tabelas
+database.sql → SQL tab
 
-# 3. Pronto!
+# 3. Deploy
+Web Service + Static Site
 ```
 
 ---
 
-**Desenvolvido com ❤️ | Powered by Render + MongoDB**
+**Desenvolvido com ❤️ | Powered by Render + PostgreSQL**

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
+import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
@@ -14,6 +14,22 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Pool de conexão PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// Testar conexão
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('❌ Erro ao conectar PostgreSQL:', err.stack);
+  } else {
+    console.log('✅ PostgreSQL conectado!');
+    release();
+  }
+});
 
 // Configuração do multer para uploads
 const uploadDir = path.join(__dirname, 'uploads');
@@ -45,53 +61,6 @@ app.use('/uploads', express.static(uploadDir));
 // Servir arquivos estáticos (frontend)
 app.use(express.static(__dirname));
 
-// Conexão com MongoDB Atlas
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB conectado!'))
-  .catch(err => console.error('❌ Erro MongoDB:', err));
-
-// ── MODELOS ────────────────────────────────────────────────────
-const osSchema = new mongoose.Schema({
-  numero: { type: String, required: true, unique: true },
-  clienteId: String,
-  cnpj: String,
-  nomeCliente: String,
-  telefone: String,
-  nomeTecnico: String,
-  lider: String,
-  emailLider: String,
-  tipoSolicitacao: String,
-  descricao: String,
-  arquivos: [{
-    nome: String,
-    tipo: String,
-    tamanho: Number,
-    caminho: String,
-    url: String
-  }],
-  status: {
-    type: String,
-    enum: ['pending', 'accepted', 'resolved', 'rejected'],
-    default: 'pending'
-  },
-  observacoes: [{
-    texto: String,
-    data: { type: Date, default: Date.now }
-  }],
-  dataAbertura: { type: Date, default: Date.now },
-  dataFechamento: Date
-}, { timestamps: true });
-
-const userSchema = new mongoose.Schema({
-  nome: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  senhaHash: { type: String, required: true },
-  lider: { type: Boolean, default: true }
-});
-
-const OS = mongoose.model('OS', osSchema);
-const User = mongoose.model('User', userSchema);
-
 // ── MIDDLEWARE DE AUTENTICAÇÃO ────────────────────────────────
 const authMiddleware = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -112,29 +81,33 @@ app.post('/api/auth/login', async (req, res) => {
     const { email, senha } = req.body;
     console.log(`🔐 Login: ${email}`);
 
-    let user = await User.findOne({ email });
+    let user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
-    if (!user) {
+    if (user.rows.length === 0) {
       console.log(`👤 Criando usuário: ${email}`);
       const senhaHash = await bcrypt.hash(senha, 10);
-      user = await User.create({
-        nome: 'Administrador',
-        email,
-        senhaHash,
-        lider: true
-      });
+      const newUser = await pool.query(
+        'INSERT INTO users (nome, email, senha_hash, lider) VALUES ($1, $2, $3, $4) RETURNING *',
+        ['Administrador', email, senhaHash, true]
+      );
+      user = newUser;
     }
 
-    const valid = await bcrypt.compare(senha, user.senhaHash);
+    const valid = await bcrypt.compare(senha, user.rows[0].senha_hash);
     if (!valid) return res.status(401).json({ error: 'Senha incorreta' });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user.rows[0].id }, process.env.JWT_SECRET, {
       expiresIn: '7d'
     });
 
     res.json({ 
       token, 
-      user: { id: user._id, nome: user.nome, email: user.email, lider: user.lider } 
+      user: { 
+        id: user.rows[0].id, 
+        nome: user.rows[0].nome, 
+        email: user.rows[0].email, 
+        lider: user.rows[0].lider 
+      } 
     });
   } catch (err) {
     console.error('Erro login:', err);
@@ -145,13 +118,13 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/change-password', authMiddleware, async (req, res) => {
   try {
     const { senhaAtual, novaSenha } = req.body;
-    const user = await User.findById(req.userId);
+    const user = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
 
-    const valid = await bcrypt.compare(senhaAtual, user.senhaHash);
+    const valid = await bcrypt.compare(senhaAtual, user.rows[0].senha_hash);
     if (!valid) return res.status(401).json({ error: 'Senha atual incorreta' });
 
-    user.senhaHash = await bcrypt.hash(novaSenha, 10);
-    await user.save();
+    const senhaHash = await bcrypt.hash(novaSenha, 10);
+    await pool.query('UPDATE users SET senha_hash = $1 WHERE id = $2', [senhaHash, req.userId]);
 
     res.json({ message: 'Senha alterada com sucesso' });
   } catch (err) {
@@ -163,14 +136,30 @@ app.post('/api/auth/change-password', authMiddleware, async (req, res) => {
 app.get('/api/os', async (req, res) => {
   try {
     const { status, tipo, cnpj } = req.query;
-    const filter = {};
+    let query = 'SELECT * FROM orders WHERE 1=1';
+    const params = [];
+    let paramIndex = 1;
 
-    if (status) filter.status = status;
-    if (tipo) filter.tipoSolicitacao = tipo;
-    if (cnpj) filter.cnpj = { $regex: cnpj.replace(/\D/g, '') };
+    if (status) {
+      query += ` AND status = $${paramIndex}`;
+      params.push(status);
+      paramIndex++;
+    }
+    if (tipo) {
+      query += ` AND tipo_solicitacao = $${paramIndex}`;
+      params.push(tipo);
+      paramIndex++;
+    }
+    if (cnpj) {
+      query += ` AND cnpj LIKE $${paramIndex}`;
+      params.push(`%${cnpj.replace(/\D/g, '')}%`);
+      paramIndex++;
+    }
 
-    const osList = await OS.find(filter).sort({ dataAbertura: -1 });
-    res.json(osList);
+    query += ' ORDER BY data_abertura DESC';
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -178,13 +167,19 @@ app.get('/api/os', async (req, res) => {
 
 app.get('/api/os/stats', async (req, res) => {
   try {
-    const total = await OS.countDocuments();
-    const pending = await OS.countDocuments({ status: 'pending' });
-    const accepted = await OS.countDocuments({ status: 'accepted' });
-    const resolved = await OS.countDocuments({ status: 'resolved' });
-    const rejected = await OS.countDocuments({ status: 'rejected' });
+    const total = await pool.query('SELECT COUNT(*) FROM orders');
+    const pending = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'pending'");
+    const accepted = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'accepted'");
+    const resolved = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'resolved'");
+    const rejected = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'rejected'");
 
-    res.json({ total, pending, accepted, resolved, rejected });
+    res.json({
+      total: parseInt(total.rows[0].count),
+      pending: parseInt(pending.rows[0].count),
+      accepted: parseInt(accepted.rows[0].count),
+      resolved: parseInt(resolved.rows[0].count),
+      rejected: parseInt(rejected.rows[0].count)
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -192,8 +187,14 @@ app.get('/api/os/stats', async (req, res) => {
 
 app.get('/api/os/next-number', async (req, res) => {
   try {
-    const lastOS = await OS.findOne().sort({ numero: -1 });
-    const nextNum = lastOS ? parseInt(lastOS.numero.replace('OS-', '')) + 1 : 1001;
+    const lastOS = await pool.query('SELECT numero FROM orders ORDER BY numero DESC LIMIT 1');
+    
+    let nextNum = 1001;
+    if (lastOS.rows.length > 0) {
+      const lastNum = parseInt(lastOS.rows[0].numero.replace('OS-', ''));
+      nextNum = lastNum + 1;
+    }
+    
     res.json({ numero: 'OS-' + String(nextNum).padStart(5, '0') });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -207,10 +208,16 @@ app.post('/api/os', upload.array('arquivos', 10), async (req, res) => {
       nomeTecnico, lider, emailLider, tipoSolicitacao, descricao
     } = req.body;
 
-    const lastOS = await OS.findOne().sort({ numero: -1 });
-    const nextNum = lastOS ? parseInt(lastOS.numero.replace('OS-', '')) + 1 : 1001;
+    // Gerar número
+    const lastOS = await pool.query('SELECT numero FROM orders ORDER BY numero DESC LIMIT 1');
+    let nextNum = 1001;
+    if (lastOS.rows.length > 0) {
+      const lastNum = parseInt(lastOS.rows[0].numero.replace('OS-', ''));
+      nextNum = lastNum + 1;
+    }
     const numero = 'OS-' + String(nextNum).padStart(5, '0');
 
+    // Processar arquivos
     const arquivos = req.files?.map(file => ({
       nome: file.originalname,
       tipo: file.mimetype,
@@ -219,22 +226,20 @@ app.post('/api/os', upload.array('arquivos', 10), async (req, res) => {
       url: `/uploads/${file.filename}`
     })) || [];
 
-    const os = await OS.create({
-      numero,
-      clienteId,
-      cnpj,
-      nomeCliente,
-      telefone,
-      nomeTecnico,
-      lider,
-      emailLider,
-      tipoSolicitacao,
-      descricao,
-      arquivos,
-      status: 'pending'
-    });
+    const result = await pool.query(
+      `INSERT INTO orders (
+        numero, cliente_id, cnpj, nome_cliente, telefone,
+        nome_tecnico, lider, email_lider, tipo_solicitacao, descricao,
+        arquivos, status, observacoes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+      [
+        numero, clienteId, cnpj, nomeCliente, telefone,
+        nomeTecnico, lider, emailLider, tipoSolicitacao, descricao,
+        JSON.stringify(arquivos), 'pending', JSON.stringify([])
+      ]
+    );
 
-    res.status(201).json(os);
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -242,9 +247,9 @@ app.post('/api/os', upload.array('arquivos', 10), async (req, res) => {
 
 app.get('/api/os/:id', async (req, res) => {
   try {
-    const os = await OS.findById(req.params.id);
-    if (!os) return res.status(404).json({ error: 'OS não encontrada' });
-    res.json(os);
+    const result = await pool.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'OS não encontrada' });
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -254,31 +259,44 @@ app.put('/api/os/:id', async (req, res) => {
   try {
     const { status, observacao } = req.body;
 
-    const update = { $set: {} };
+    const os = await pool.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);
+    if (os.rows.length === 0) return res.status(404).json({ error: 'OS não encontrada' });
+
+    const updates = [];
+    const params = [];
+    let paramIndex = 1;
 
     if (status) {
-      update.$set.status = status;
-    }
-
-    if (status === 'resolved') {
-      update.$set.dataFechamento = new Date();
+      updates.push(`status = $${paramIndex}`);
+      params.push(status);
+      paramIndex++;
+      
+      if (status === 'resolved') {
+        updates.push(`data_fechamento = NOW()`);
+      }
     }
 
     if (observacao) {
-      update.$push = {
-        observacoes: { texto: observacao, data: new Date() }
-      };
+      const obsArray = os.rows[0].observacoes || [];
+      obsArray.push({ texto: observacao, data: new Date().toISOString() });
+      updates.push(`observacoes = $${paramIndex}`);
+      params.push(JSON.stringify(obsArray));
+      paramIndex++;
     }
 
-    if (Object.keys(update.$set).length === 0) {
-      delete update.$set;
+    if (updates.length === 0) {
+      return res.json(os.rows[0]);
     }
 
-    const os = await OS.findByIdAndUpdate(req.params.id, update, { new: true });
+    updates.push(`updated_at = NOW()`);
+    params.push(req.params.id);
 
-    if (!os) return res.status(404).json({ error: 'OS não encontrada' });
+    const result = await pool.query(
+      `UPDATE orders SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+      params
+    );
 
-    res.json(os);
+    res.json(result.rows[0]);
   } catch (err) {
     console.error('Erro ao atualizar OS:', err);
     res.status(500).json({ error: err.message });
@@ -287,14 +305,18 @@ app.put('/api/os/:id', async (req, res) => {
 
 app.delete('/api/os/:id', async (req, res) => {
   try {
-    const os = await OS.findByIdAndDelete(req.params.id);
-    if (!os) return res.status(404).json({ error: 'OS não encontrada' });
+    const os = await pool.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);
+    if (os.rows.length === 0) return res.status(404).json({ error: 'OS não encontrada' });
 
-    os.arquivos?.forEach(file => {
+    // Remover arquivos físicos
+    const arquivos = os.rows[0].arquivos || [];
+    arquivos.forEach(file => {
       if (file.caminho && fs.existsSync(file.caminho)) {
         fs.unlinkSync(file.caminho);
       }
     });
+
+    await pool.query('DELETE FROM orders WHERE id = $1', [req.params.id]);
 
     res.json({ message: 'OS removida com sucesso' });
   } catch (err) {
@@ -306,5 +328,5 @@ app.delete('/api/os/:id', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
   console.log(`📦 Uploads: ${uploadDir}`);
-  console.log(`🌐 Frontend: http://localhost:${PORT}`);
+  console.log(`🗄️  Banco: PostgreSQL (Render)`);
 });
