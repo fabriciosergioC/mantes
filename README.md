@@ -1,25 +1,23 @@
-# Mantes — Sistema de Gestão de Manutenção 2.0
+# Mantes — Sistema de Gestão de Manutenção
 
-Sistema moderno de abertura e gerenciamento de Ordens de Serviço (O.S.) para manutenção, agora com **Nhost** (PostgreSQL + GraphQL + Auth + Storage).
+Sistema de abertura e gerenciamento de Ordens de Serviço (O.S.) para manutenção.
 
 ---
 
 ## 🚀 Stack Tecnológica
 
-**Frontend:**
-- Vite (build tool)
-- JavaScript ES6+ (módulos nativos)
-- CSS Custom Properties
+**Backend:**
+- Node.js + Express
+- MongoDB Atlas (banco de dados na nuvem)
+- JWT (autenticação)
+- Multer (upload de arquivos)
 
-**Backend (Nhost):**
-- PostgreSQL (banco de dados)
-- Hasura GraphQL Engine (API)
-- Nhost Auth (autenticação)
-- Nhost Storage (arquivos)
+**Frontend:**
+- HTML5, CSS3, JavaScript (vanilla)
+- Design responsivo e moderno
 
 **Deploy:**
-- Vercel (frontend estático)
-- Nhost Cloud (backend completo)
+- Render (backend + frontend)
 
 ---
 
@@ -31,16 +29,26 @@ Sistema moderno de abertura e gerenciamento de Ordens de Serviço (O.S.) para ma
 npm install
 ```
 
-### 2. Configurar Nhost
+### 2. Configurar MongoDB Atlas
 
-1. Crie conta em https://console.nhost.io
-2. Crie um projeto gratuito
-3. Copie `.env.example` para `.env`
-4. Preencha com suas credenciais do Nhost
+1. Crie conta em https://cloud.mongodb.com
+2. Crie um cluster gratuito (M0)
+3. Crie usuário em **Database Access**
+4. Libere IP em **Network Access** → 0.0.0.0/0
+5. Copie a string de conexão
 
-### 3. Criar tabelas no Hasura
+### 3. Configurar variáveis de ambiente
 
-Execute o SQL em `nhost/sql/create-tables.sql` no console do Nhost (Data → SQL)
+```bash
+cp .env.example .env
+```
+
+Edite `.env` com sua string do MongoDB:
+```env
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/mantes
+JWT_SECRET=sua_chave_secreta
+PORT=3000
+```
 
 ### 4. Rodar em desenvolvimento
 
@@ -48,7 +56,7 @@ Execute o SQL em `nhost/sql/create-tables.sql` no console do Nhost (Data → SQL
 npm run dev
 ```
 
-O sistema abrirá em http://localhost:5500
+O sistema abrirá em http://localhost:3000
 
 ---
 
@@ -56,145 +64,79 @@ O sistema abrirá em http://localhost:5500
 
 ```
 mantes/
-├── nhost/                    # Configuração Nhost
-│   ├── schema.graphql        # Schema GraphQL
-│   ├── sql/
-│   │   └── create-tables.sql # SQL para criar tabelas
-│   └── graphql/
-│       └── queries.md        # Queries e mutations
-├── src/
-│   ├── lib/
-│   │   └── nhost.js          # Configuração do cliente Nhost
-│   └── services/
-│       ├── auth.js           # Serviço de autenticação
-│       ├── os.js             # Serviço de Ordens de Serviço
-│       └── upload.js         # Serviço de upload
-├── index.html                # Formulário de abertura de O.S.
-├── lider.html                # Painel do líder
-├── main.js                   # Lógica do frontend
-├── package.json
-├── vite.config.js            # Configuração Vite
-├── .env.example              # Modelo de variáveis de ambiente
+├── server.js           # Backend Express + MongoDB
+├── main.js             # Lógica do frontend
+├── index.html          # Formulário de abertura de O.S.
+├── lider.html          # Painel do líder
+├── reset-senha.html    # Reset de senha
+├── package.json        # Dependências
+├── render.yaml         # Configuração Render
+├── .env.example        # Modelo de variáveis
 └── README.md
 ```
 
 ---
 
-## 🔌 API Endpoints (GraphQL)
+## 🔌 API Endpoints
 
 ### Autenticação
-
-```graphql
-# Login
-mutation {
-  login(email: "user@example.com", password: "senha") {
-    accessToken
-    user { id email displayName }
-  }
-}
-
-# Registro
-mutation {
-  register(email: "user@example.com", password: "senha") {
-    accessToken
-    user { id email }
-  }
-}
+```
+POST /api/auth/login              - Login
+POST /api/auth/change-password    - Alterar senha
 ```
 
 ### Ordens de Serviço
-
-```graphql
-# Listar todas
-query {
-  order(order_by: { data_abertura: desc }) {
-    id numero status nome_cliente tipo_solicitacao
-  }
-}
-
-# Criar nova
-mutation {
-  insert_order_one(object: {
-    numero: "OS-01001"
-    nome_cliente: "Cliente X"
-    status: "pending"
-  }) {
-    id numero
-  }
-}
-
-# Atualizar
-mutation {
-  update_order_by_pk(
-    pk_columns: { id: "uuid-aqui" }
-    _set: { status: "resolved" }
-  ) {
-    id status
-  }
-}
+```
+GET  /api/os                      - Listar todas
+GET  /api/os/stats                - Estatísticas
+GET  /api/os/next-number          - Próximo número
+GET  /api/os/:id                  - Detalhes de uma OS
+POST /api/os                      - Criar nova OS
+PUT  /api/os/:id                  - Atualizar OS
+DELETE /api/os/:id                - Remover OS
 ```
 
 ---
 
-## 📊 Scripts Disponíveis
+## 📊 Scripts
 
 ```bash
-# Desenvolvimento
-npm run dev          # Vite dev server
-
-# Build
-npm run build        # Build para produção
-npm run preview      # Preview do build
-
-# Deploy
-npm run deploy       # Build + deploy na Vercel
+npm start          # Produção
+npm run dev        # Desenvolvimento
 ```
+
+---
+
+## 🚀 Deploy no Render
+
+### Opção 1: Usando render.yaml (Automático)
+
+1. Acesse https://render.com
+2. Login com GitHub
+3. **New +** → **Blueprint**
+4. Conecte seu repositório
+5. O Render lê `render.yaml` automaticamente
+
+### Opção 2: Manual
+
+**Backend:**
+1. **New +** → **Web Service**
+2. Build: `npm install`
+3. Start: `npm start`
+4. Adicione variáveis: `MONGODB_URI`, `JWT_SECRET`
+
+**Frontend:**
+1. **New +** → **Static Site**
+2. Build: `echo "Sem build"`
+3. Publish: `.`
+
+**Guia completo:** `DEPLOY-RENDER.md`
 
 ---
 
 ## 🔐 Login
 
-No primeiro acesso, use o formulário de login. O Nhost Auth criará o usuário automaticamente.
-
----
-
-## 🚀 Deploy para Produção
-
-### Vercel (Recomendado)
-
-1. Push para GitHub
-2. Importe na Vercel
-3. Adicione variáveis de ambiente do Nhost
-4. Deploy!
-
-**Guia completo:** `DEPLOY-VERCEL-NHOST.md`
-
-### Migração
-
-**Guia de migração do MongoDB:** `MIGRACAO-NHOST.md`
-
----
-
-## 📚 Documentação
-
-- `MIGRACAO-NHOST.md` - Guia de migração do MongoDB Atlas
-- `DEPLOY-VERCEL-NHOST.md` - Deploy na Vercel
-- `nhost/README.md` - Configuração do Nhost
-- `nhost/graphql/queries.md` - Queries e mutations GraphQL
-
----
-
-## 🔧 Variáveis de Ambiente
-
-```env
-NHOST_SUBDOMAIN=seu-projeto
-NHOST_REGION=us-east-1
-NHOST_GRAPHQL_ENDPOINT=https://seu-projeto.nhost.app/v1/graphql
-NHOST_ADMIN_SECRET=sua-admin-secret
-NHOST_AUTH_URL=https://seu-projeto.nhost.app/auth
-NHOST_STORAGE_URL=https://seu-projeto.nhost.app/storage
-FRONTEND_URL=http://localhost:5500
-```
+No primeiro acesso, use qualquer email/senha. O sistema cria o usuário automaticamente.
 
 ---
 
@@ -202,9 +144,13 @@ FRONTEND_URL=http://localhost:5500
 
 ```json
 {
-  "@nhost/nhost-js": "^2.2.21",
-  "vite": "^5.0.0",
-  "vercel": "^32.0.0"
+  "bcryptjs": "^2.4.3",
+  "cors": "^2.8.5",
+  "dotenv": "^16.3.1",
+  "express": "^4.18.2",
+  "jsonwebtoken": "^9.0.2",
+  "mongoose": "^8.0.3",
+  "multer": "^1.4.5-lts.1"
 }
 ```
 
@@ -212,11 +158,10 @@ FRONTEND_URL=http://localhost:5500
 
 ## 🎯 Funcionalidades
 
-- ✅ Autenticação com Nhost Auth
-- ✅ Banco de dados PostgreSQL na nuvem
-- ✅ API GraphQL com Hasura
-- ✅ Upload de arquivos (Nhost Storage)
-- ✅ Status: Pendente, Enviada, Resolvida, Rejeitada
+- ✅ MongoDB Atlas na nuvem
+- ✅ Upload de arquivos (até 10MB)
+- ✅ Autenticação JWT
+- ✅ Status: Pendente, Aceita, Resolvida, Rejeitada
 - ✅ Filtros e busca
 - ✅ Observações/histórico
 - ✅ Responsivo (mobile-first)
@@ -226,26 +171,23 @@ FRONTEND_URL=http://localhost:5500
 ## ⚠️ Importante
 
 - **Nunca commit o arquivo `.env`** no Git
-- Em produção, configure CORS no Nhost para seu domínio
-- Use HTTPS em produção
+- Em produção, use IPs específicos no MongoDB Atlas
+- Use uma **JWT_SECRET** forte
 
 ---
 
-## 📝 Changelog
+## 📝 Deploy Rápido
 
-### v2.0.0 (Nhost)
-- Migração de MongoDB para PostgreSQL
-- API REST → GraphQL
-- Autenticação própria → Nhost Auth
-- Upload local → Nhost Storage
-- Webpack → Vite
+```bash
+# 1. MongoDB Atlas
+https://cloud.mongodb.com → Criar cluster → Copiar URI
 
-### v1.0.0 (MongoDB)
-- Node.js + Express
-- MongoDB Atlas
-- API REST
-- JWT Auth
+# 2. Render
+https://render.com → Import projeto → Conectar MongoDB
+
+# 3. Pronto!
+```
 
 ---
 
-**Desenvolvido com ❤️ | Powered by Nhost + Vercel**
+**Desenvolvido com ❤️ | Powered by Render + MongoDB**

@@ -1,7 +1,9 @@
-// Mantes Frontend - Nhost Integration
-import { authService } from './src/services/auth.js';
-import { osService } from './src/services/os.js';
-import { uploadService } from './src/services/upload.js';
+// Mantes Frontend - API Integration
+
+// Configuração da API
+const API_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000' 
+  : window.location.origin;
 
 // Elementos DOM
 const loginCard = document.getElementById('loginCard');
@@ -23,9 +25,11 @@ let arquivosSelecionados = [];
 
 // Verificar autenticação ao carregar
 function checkAuth() {
-  if (authService.isAuthenticated()) {
-    const user = authService.getCurrentUser();
-    userName.textContent = user.nome;
+  const token = localStorage.getItem('@mantes:token');
+  const user = localStorage.getItem('@mantes:user');
+  
+  if (token && user) {
+    userName.textContent = JSON.parse(user).nome;
     loginCard.style.display = 'none';
     mainCard.style.display = 'block';
     carregarProximoNumero();
@@ -65,15 +69,14 @@ const formatadores = {
 // Carregar próximo número da OS
 async function carregarProximoNumero() {
   try {
-    // Em produção, usar o serviço Nhost
-    // const numero = await osService.proximoNumero();
-    // numeroInput.value = numero;
-    
-    // Mock para desenvolvimento
-    const randomNum = Math.floor(Math.random() * 1000) + 1001;
-    numeroInput.value = `OS-${String(randomNum).padStart(5, '0')}`;
+    const res = await fetch(`${API_URL}/api/os/next-number`);
+    const data = await res.json();
+    numeroInput.value = data.numero;
   } catch (error) {
     console.error('Erro ao carregar número:', error);
+    // Fallback
+    const randomNum = Math.floor(Math.random() * 1000) + 1001;
+    numeroInput.value = `OS-${String(randomNum).padStart(5, '0')}`;
   }
 }
 
@@ -144,15 +147,29 @@ loginForm.addEventListener('submit', async (e) => {
   btnLogin.disabled = true;
   btnLogin.innerHTML = '<span class="loading"></span> Entrando...';
 
-  const result = await authService.login(email, senha);
+  try {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha })
+    });
 
-  if (result.success) {
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.error || 'Erro no login');
+    }
+
+    localStorage.setItem('@mantes:user', JSON.stringify(result.user));
+    localStorage.setItem('@mantes:token', result.token);
+
     userName.textContent = result.user.nome;
     loginCard.style.display = 'none';
     mainCard.style.display = 'block';
     carregarProximoNumero();
-  } else {
-    showAlert(loginAlert, result.error || 'Erro no login', 'error');
+
+  } catch (error) {
+    showAlert(loginAlert, error.message, 'error');
   }
 
   btnLogin.disabled = false;
@@ -160,8 +177,9 @@ loginForm.addEventListener('submit', async (e) => {
 });
 
 // Logout
-btnLogout.addEventListener('click', async () => {
-  await authService.logout();
+btnLogout.addEventListener('click', () => {
+  localStorage.removeItem('@mantes:user');
+  localStorage.removeItem('@mantes:token');
   location.reload();
 });
 
@@ -173,52 +191,45 @@ osForm.addEventListener('submit', async (e) => {
   btnSubmit.innerHTML = '<span class="loading"></span> Criando...';
 
   try {
-    // Upload de arquivos primeiro (se houver)
-    let arquivosData = [];
-    
-    if (arquivosSelecionados.length > 0) {
-      // Em produção, usar Nhost Storage
-      // const uploads = await uploadService.uploadMultiple(arquivosSelecionados);
-      // arquivosData = uploads;
-      
-      // Mock para desenvolvimento
-      arquivosData = arquivosSelecionados.map(file => ({
-        nome: file.name,
-        tipo: file.type,
-        tamanho: file.size,
-        url: '/uploads/' + file.name
-      }));
+    const formData = new FormData();
+    formData.append('clienteId', document.getElementById('clienteId').value);
+    formData.append('cnpj', document.getElementById('cnpj').value.replace(/\D/g, ''));
+    formData.append('nomeCliente', document.getElementById('nomeCliente').value);
+    formData.append('telefone', document.getElementById('telefone').value);
+    formData.append('nomeTecnico', document.getElementById('nomeTecnico').value);
+    formData.append('lider', document.getElementById('lider').value);
+    formData.append('emailLider', document.getElementById('emailLider').value);
+    formData.append('tipoSolicitacao', document.getElementById('tipoSolicitacao').value);
+    formData.append('descricao', document.getElementById('descricao').value);
+
+    arquivosSelecionados.forEach(file => {
+      formData.append('arquivos', file);
+    });
+
+    const token = localStorage.getItem('@mantes:token');
+    const res = await fetch(`${API_URL}/api/os`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    const os = await res.json();
+
+    if (!res.ok) {
+      throw new Error(os.error || 'Erro ao criar OS');
     }
-
-    const osData = {
-      clienteId: document.getElementById('clienteId').value,
-      cnpj: document.getElementById('cnpj').value.replace(/\D/g, ''),
-      nomeCliente: document.getElementById('nomeCliente').value,
-      telefone: document.getElementById('telefone').value,
-      nomeTecnico: document.getElementById('nomeTecnico').value,
-      lider: document.getElementById('lider').value,
-      emailLider: document.getElementById('emailLider').value,
-      tipoSolicitacao: document.getElementById('tipoSolicitacao').value,
-      descricao: document.getElementById('descricao').value,
-      arquivos: arquivosData
-    };
-
-    // Em produção, usar serviço Nhost
-    // const os = await osService.criar(osData);
-    
-    // Mock para desenvolvimento
-    const os = { numero: numeroInput.value, id: Date.now() };
 
     showAlert(formAlert, `OS ${os.numero} criada com sucesso!`, 'success');
     
-    // Resetar formulário
     osForm.reset();
     arquivosSelecionados = [];
     fileList.innerHTML = '';
     carregarProximoNumero();
 
   } catch (error) {
-    showAlert(formAlert, error.message || 'Erro ao criar OS', 'error');
+    showAlert(formAlert, error.message, 'error');
   }
 
   btnSubmit.disabled = false;

@@ -1,12 +1,16 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,9 +28,9 @@ const storage = multer.diskStorage({
     cb(null, uniqueName);
   }
 });
-const upload = multer({ 
+const upload = multer({
   storage,
-  limits: { fileSize: 1024 * 1024 * 1024 } // 1GB
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
 // Middleware
@@ -34,14 +38,17 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(uploadDir));
+
+// Servir arquivos estáticos (frontend)
+app.use(express.static(__dirname));
 
 // Conexão com MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB Atlas conectado!'))
-  .catch(err => console.error('❌ Erro ao conectar MongoDB:', err));
+  .then(() => console.log('✅ MongoDB conectado!'))
+  .catch(err => console.error('❌ Erro MongoDB:', err));
 
 // ── MODELOS ────────────────────────────────────────────────────
 const osSchema = new mongoose.Schema({
@@ -62,8 +69,8 @@ const osSchema = new mongoose.Schema({
     caminho: String,
     url: String
   }],
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     enum: ['pending', 'accepted', 'resolved', 'rejected'],
     default: 'pending'
   },
@@ -103,13 +110,12 @@ const authMiddleware = async (req, res, next) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
-    console.log(`🔐 Login attempt - Email: ${email}`);
+    console.log(`🔐 Login: ${email}`);
 
-    // Primeiro login: cria usuário admin se não existir
     let user = await User.findOne({ email });
-    
+
     if (!user) {
-      console.log(`👤 Usuário não encontrado, criando: ${email}`);
+      console.log(`👤 Criando usuário: ${email}`);
       const senhaHash = await bcrypt.hash(senha, 10);
       user = await User.create({
         nome: 'Administrador',
@@ -117,27 +123,21 @@ app.post('/api/auth/login', async (req, res) => {
         senhaHash,
         lider: true
       });
-      console.log(`✅ Usuário criado com ID: ${user._id}`);
-    } else {
-      console.log(`✅ Usuário encontrado: ${user._id}`);
     }
 
     const valid = await bcrypt.compare(senha, user.senhaHash);
-    console.log(`🔑 Senha válida: ${valid}`);
-    
-    if (!valid) {
-      console.log(`❌ Senha incorreta para ${email}`);
-      return res.status(401).json({ error: 'Senha incorreta' });
-    }
+    if (!valid) return res.status(401).json({ error: 'Senha incorreta' });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d'
     });
 
-    console.log(`✅ Login bem-sucedido: ${email}`);
-    res.json({ token, user: { id: user._id, nome: user.nome, email: user.email } });
+    res.json({ 
+      token, 
+      user: { id: user._id, nome: user.nome, email: user.email, lider: user.lider } 
+    });
   } catch (err) {
-    console.error(`❌ Erro no login:`, err);
+    console.error('Erro login:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -207,12 +207,10 @@ app.post('/api/os', upload.array('arquivos', 10), async (req, res) => {
       nomeTecnico, lider, emailLider, tipoSolicitacao, descricao
     } = req.body;
 
-    // Gera número da OS
     const lastOS = await OS.findOne().sort({ numero: -1 });
     const nextNum = lastOS ? parseInt(lastOS.numero.replace('OS-', '')) + 1 : 1001;
     const numero = 'OS-' + String(nextNum).padStart(5, '0');
 
-    // Processa arquivos
     const arquivos = req.files?.map(file => ({
       nome: file.originalname,
       tipo: file.mimetype,
@@ -256,42 +254,33 @@ app.put('/api/os/:id', async (req, res) => {
   try {
     const { status, observacao } = req.body;
 
-    console.log(`📝 Recebida atualização para O.S. ${req.params.id}:`, { status, observacao });
-
-    // Build update object usando $set para campos diretos
     const update = { $set: {} };
 
     if (status) {
       update.$set.status = status;
     }
-    
+
     if (status === 'resolved') {
       update.$set.dataFechamento = new Date();
     }
 
-    // Use $push para observacoes array
     if (observacao) {
       update.$push = {
         observacoes: { texto: observacao, data: new Date() }
       };
     }
 
-    // Remove $set vazio
     if (Object.keys(update.$set).length === 0) {
       delete update.$set;
     }
-
-    console.log('🔧 Update enviado ao MongoDB:', JSON.stringify(update));
 
     const os = await OS.findByIdAndUpdate(req.params.id, update, { new: true });
 
     if (!os) return res.status(404).json({ error: 'OS não encontrada' });
 
-    console.log(`✅ O.S. ${os.numero} atualizada para status: ${os.status}`);
-    console.log(`📝 Observações adicionadas: ${observacao ? 'SIM' : 'NÃO'}`);
     res.json(os);
   } catch (err) {
-    console.error('Erro ao atualizar O.S.:', err);
+    console.error('Erro ao atualizar OS:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -301,7 +290,6 @@ app.delete('/api/os/:id', async (req, res) => {
     const os = await OS.findByIdAndDelete(req.params.id);
     if (!os) return res.status(404).json({ error: 'OS não encontrada' });
 
-    // Remove arquivos físicos
     os.arquivos?.forEach(file => {
       if (file.caminho && fs.existsSync(file.caminho)) {
         fs.unlinkSync(file.caminho);
@@ -315,13 +303,8 @@ app.delete('/api/os/:id', async (req, res) => {
 });
 
 // ── INICIALIZAÇÃO ─────────────────────────────────────────────
-// Exporta para Vercel (serverless) e mantém compatibilidade local
-if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-  module.exports = app;
-  console.log('🔧 Modo serverless (Vercel)');
-} else {
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-    console.log(`📦 Uploads em: ${uploadDir}`);
-  });
-}
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  console.log(`📦 Uploads: ${uploadDir}`);
+  console.log(`🌐 Frontend: http://localhost:${PORT}`);
+});

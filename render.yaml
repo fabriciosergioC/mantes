@@ -1,10 +1,12 @@
-# Configuração do Render para o Mantes Backend
 services:
+  # Backend API
   - type: web
-    name: mantes-backend
+    name: mantes-api
     env: node
-    buildCommand: "npm install"
-    startCommand: "npm start"
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -14,5 +16,22 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+        type: random
       - key: FRONTEND_URL
         sync: false
+
+  # Frontend estático
+  - type: static
+    name: mantes-web
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: echo "Sem build"
+    staticPublishPath: .
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
