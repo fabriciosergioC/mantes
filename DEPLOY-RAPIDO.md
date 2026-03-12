@@ -1,201 +1,105 @@
-# 🚀 Deploy Rápido - Mantes no Netlify
+# 🚀 GUIA RÁPIDO DE DEPLOY - MANTES
 
-Guia **super rápido** para deploy usando **apenas Netlify** (frontend + backend) + **Neon** (banco).
-
-> ✅ **Netlify puro**: Frontend + Backend (Functions)
-> ✅ **Neon**: PostgreSQL serverless (grátis, não expira)
-
----
-
-## ⚡ Resumo em 3 Passos
-
-| Passo | O quê | Onde | Tempo |
-|-------|-------|------|-------|
-| **1** | Criar banco | Neon | 3 min |
-| **2** | Criar tabelas | Neon SQL Editor | 1 min |
-| **3** | Deploy | Netlify | 5 min |
+## ✅ O que já está pronto:
+- [x] Código no GitHub: https://github.com/fabriciosergioC/mantes
+- [x] Banco Neon configurado
+- [x] Netlify.toml configurado
+- [x] API funcional testada localmente
 
 ---
 
-## Passo 1: Criar Banco no Neon (3 minutos)
+## 🎯 DEPLOY EM 3 PASSOS:
 
-```
-1. Acesse: https://neon.tech
-2. Login com GitHub
-3. Create a project
-4. Nome: mantes
-5. Region: Oregon
-6. Click: Create project
-7. Connect → Copy URI
-```
+### **PASSO 1: Criar site no Netlify**
 
-**Salve a connection string!**
-```
-postgresql://user:senha@ep-xxx.us-east-2.aws.neon.tech/mantes?sslmode=require
-```
-
----
-
-## Passo 2: Criar Tabelas (1 minuto)
-
-```
-1. Neon → SQL Editor
-2. Copie o conteúdo de database.sql
-3. Cole no editor
-4. Run ▶
-5. Verifique: Tables → users, orders
-```
+1. **Acesse:** https://app.netlify.com/start
+2. **Clique:** "Add new site" → "Import an existing project"
+3. **Autorize** o Netlify a acessar seu GitHub
+4. **Selecione** o repositório: `fabriciosergioC/mantes`
+5. **Configure:**
+   ```
+   Base directory: (deixe em branco)
+   Build command: echo 'Sem build'
+   Publish directory: .
+   Functions directory: netlify/functions
+   ```
+6. **Clique:** "Deploy site"
 
 ---
 
-## Passo 3: Deploy no Netlify (5 minutos)
+### **PASSO 2: Adicionar Variáveis de Ambiente**
 
-### 3.1 Preparar GitHub
+No painel do Netlify:
 
-```bash
-git init
-git add .
-git commit -m "Mantes no Netlify"
-git remote add origin https://github.com/SEU-USUARIO/mantes.git
-git push -u origin main
-```
+1. **Vá em:** Site settings → Environment variables
+2. **Clique:** "Add a variable"
+3. **Adicione estas 3 variáveis:**
 
-### 3.2 Deploy no Netlify
-
-```
-1. https://netlify.com → Login GitHub
-2. Add new site → Import an existing project
-3. Selecione: mantes
-4. Build command: echo 'Sem build'
-5. Publish directory: .
-6. Environment variables:
-   - DATABASE_URL = (URI do Neon)
-   - JWT_SECRET = mantes2024secretkey
-   - NODE_ENV = production
-7. Deploy site
-```
+| Nome | Valor |
+|------|-------|
+| `DATABASE_URL` | `postgresql://neondb_owner:npg_SOX1qVtCHnR4@ep-autumn-sun-adsj6mve-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require` |
+| `JWT_SECRET` | `mantes-production-secret-key-2024` |
+| `NODE_ENV` | `production` |
 
 ---
 
-## ✅ Pronto!
+### **PASSO 3: Aguardar Deploy**
 
-**URLs:**
-- Frontend: `https://seu-site.netlify.app`
-- API: `https://seu-site.netlify.app/api/os/stats`
-- Painel: `https://seu-site.netlify.app/lider.html`
-
-**Teste:**
-```
-1. Acesse o site
-2. Login: admin@mantes.com / admin123
-3. Crie uma OS
-4. Vá em /lider.html (senha: mantes2024)
-```
+1. O Netlify vai fazer o deploy automático (~2 minutos)
+2. **Acesse:** `https://seu-site-aqui.netlify.app`
+3. **Teste:**
+   - Login: `meydya@mantes.com` / `123456`
+   - Crie uma OS
 
 ---
 
-## 📁 O Que Cada Arquivo Faz
+## 🔄 DEPOIS DO DEPLOY:
 
-| Arquivo | Função |
-|---------|--------|
-| `netlify/functions/api.js` | **Backend completo** (autenticação + CRUD) |
-| `index.html` | Frontend (criação de OS) |
-| `lider.html` | Painel do líder |
-| `netlify.toml` | Configura o Netlify |
-| `database.sql` | Cria tabelas no banco |
-
----
-
-## 🔧 Como Funciona
-
-```
-┌─────────────────────────────────────┐
-│         NETLIFY                     │
-│  ┌───────────┐  ┌────────────────┐ │
-│  │ Frontend  │  │ Netlify        │ │
-│  │ (HTML/CSS)│  │ Functions      │ │
-│  │           │─▶│ (Backend API)  │ │
-│  └───────────┘  └───────┬────────┘ │
-└─────────────────────────┼───────────┘
-                          │
-                          ▼
-              ┌───────────────────────┐
-              │    NEON (PostgreSQL)  │
-              │  - users              │
-              │  - orders             │
-              └───────────────────────┘
-```
-
-**Fluxo:**
-1. Usuário acessa `https://seu-site.netlify.app`
-2. Frontend chama `/api/login`
-3. Netlify Functions processa a requisição
-4. Function consulta/salva no Neon PostgreSQL
-5. Resposta volta para o frontend
-
----
-
-## 🛠️ Desenvolvimento Local
-
-```bash
-# Instalar Netlify CLI
-npm install -g netlify-cli
-
-# Rodar localmente
-netlify dev
-
-# Acesse: http://localhost:8888
-```
-
----
-
-## ⚠️ Limitações (Free)
-
-**Netlify:**
-- 100GB bandwidth/mês
-- 125k functions/mês
-- 10s timeout por function
-
-**Neon:**
-- 0.5 GB storage
-- Não expira ✅
-
----
-
-## 🐛 Problemas Comuns
-
-| Erro | Solução |
-|------|---------|
-| 404 em /api/* | Verifique netlify.toml |
-| Database connection failed | Confira DATABASE_URL |
-| Token inválido | Adicione JWT_SECRET |
-
----
-
-## 📊 Ver Logs
-
-**Netlify:**
-```
-Dashboard → Site → Deploys → Click no deploy → Server log
-```
-
-**Neon:**
-```
-Projeto → Dashboard → Connections
-```
-
----
-
-## 🔄 Atualizar
-
+### Atualizar o site:
 ```bash
 git add .
-git commit -m "Alterações"
+git commit -m "sua mensagem"
 git push
 ```
+O Netlify atualiza automaticamente em ~1 minuto!
 
-Netlify faz deploy automático!
+### Ver logs:
+- **Deploy:** https://app.netlify.com/sites/seu-site/deploys
+- **API:** https://app.netlify.com/sites/seu-site/functions → api → Logs
 
 ---
 
-**🎉 Sistema no ar usando apenas Netlify + Neon!**
+## 🎁 BÔNUS: Domínio Personalizado
+
+1. Vá em **Domain settings** no Netlify
+2. Clique em **"Add custom domain"**
+3. Digite: `mantes.seudominio.com.br`
+4. Configure o DNS no seu provedor:
+   ```
+   Tipo: CNAME
+   Nome: mantes (ou @)
+   Valor: seu-site.netlify.app
+   ```
+
+---
+
+## ✅ CHECKLIST FINAL:
+
+- [ ] Site criado no Netlify
+- [ ] Variáveis de ambiente configuradas
+- [ ] Deploy inicial concluído
+- [ ] Login testado
+- [ ] Criação de OS testada
+- [ ] Logs verificados
+
+---
+
+## 🆘 PRECISA DE AJUDA?
+
+1. **Erro 500:** Verifique as variáveis de ambiente
+2. **Banco não conecta:** Libere IP no Neon (0.0.0.0/0)
+3. **API não responde:** Confira os logs das Functions
+
+---
+
+**📝 Anote a URL do seu site:** _____________________________
