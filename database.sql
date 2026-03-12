@@ -1,12 +1,24 @@
 -- Script SQL para criar tabelas no PostgreSQL
 -- Execute no dashboard do seu banco (Render, Neon, Supabase, etc.)
 
--- Tabela de usuários
+-- Tabela de Credenciais de Login (segurança separada)
+CREATE TABLE IF NOT EXISTS login_credentials (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  senha_hash VARCHAR(255) NOT NULL,
+  ativo BOOLEAN DEFAULT true,
+  tentativas_falhas INTEGER DEFAULT 0,
+  bloqueado_ate TIMESTAMP WITH TIME ZONE,
+  ultima_troca_senha TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tabela de usuários (dados adicionais)
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   nome VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
-  senha_hash VARCHAR(255) NOT NULL,
   lider BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -35,6 +47,7 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 -- Índices para performance
+CREATE INDEX IF NOT EXISTS idx_login_credentials_email ON login_credentials(email);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_numero ON orders(numero);
 CREATE INDEX IF NOT EXISTS idx_orders_cnpj ON orders(cnpj);
@@ -49,6 +62,9 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_login_credentials_updated_at BEFORE UPDATE ON login_credentials
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

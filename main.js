@@ -1,9 +1,8 @@
 // Mantes Frontend - API Integration
 
 // Configuração da API
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:3000'
-  : '';
+// Netlify Dev serve functions em /api/* localmente e em produção
+const API_BASE = '/api';
 
 // Elementos DOM
 const loginCard = document.getElementById('loginCard');
@@ -69,7 +68,7 @@ const formatadores = {
 // Carregar próximo número da OS
 async function carregarProximoNumero() {
   try {
-    const res = await fetch(`${API_URL}/api/os/next-number`);
+    const res = await fetch(`${API_BASE}/os/next-number`);
     const data = await res.json();
     numeroInput.value = data.numero;
   } catch (error) {
@@ -148,7 +147,7 @@ loginForm.addEventListener('submit', async (e) => {
   btnLogin.innerHTML = '<span class="loading"></span> Entrando...';
 
   try {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
+    const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, senha })
@@ -207,7 +206,7 @@ osForm.addEventListener('submit', async (e) => {
     });
 
     const token = localStorage.getItem('@mantes:token');
-    const res = await fetch(`${API_URL}/api/os`, {
+    const res = await fetch(`${API_BASE}/os`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
