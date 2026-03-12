@@ -4,9 +4,18 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 // Pool de conexão PostgreSQL
+console.log('🔧 [INIT] DATABASE_URL:', process.env.DATABASE_URL ? 'DEFINIDA' : 'NÃO DEFINIDA');
+console.log('🔧 [INIT] JWT_SECRET:', process.env.JWT_SECRET ? 'DEFINIDA' : 'NÃO DEFINIDA');
+console.log('🔧 [INIT] NODE_ENV:', process.env.NODE_ENV || 'development');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// Testar conexão com o banco
+pool.on('error', (err) => {
+  console.error('❌ [DB ERROR] Unexpected error on idle client', err);
 });
 
 // Middleware de autenticação
@@ -45,7 +54,8 @@ export const handler = async (event, context) => {
   console.log('📥 Request:', httpMethod, route);
   console.log('📥 Path:', path);
   console.log('📥 Query params:', JSON.stringify(queryStringParameters));
-  console.log('📥 Body length:', body?.length);
+  console.log('📥 Body:', body);
+  console.log('📥 ParsedBody:', parsedBody);
 
   const headersCors = {
     'Access-Control-Allow-Origin': '*',
@@ -71,42 +81,83 @@ export const handler = async (event, context) => {
 
     // ── ROTAS DE AUTENTICAÇÃO ─────────────────────────────────────
     if (route === '/api/auth/login' && httpMethod === 'POST') {
-      const { email, senha } = parsedBody || JSON.parse(body);
+      console.log('🔐 [DEBUG] parsedBody:', parsedBody);
+      console.log('🔐 [DEBUG] body:', body);
+      
+      if (!parsedBody || !parsedBody.email || !parsedBody.senha) {
+        console.error('❌ Body inválido:', { parsedBody, body });
+        return { statusCode: 400, headers: headersCors, body: JSON.stringify({ error: 'Email e senha são obrigatórios' }) };
+      }
+      
+      const { email, senha } = parsedBody;
       console.log(`🔐 Login: ${email}`);
 
-      let user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      try {
+        // Buscar credenciais na tabela separada
+        console.log('🔍 Buscando credenciais para:', email);
+        let credenciais = await pool.query('SELECT * FROM login_credentials WHERE email = $1', [email]);
+        console.log('📊 Resultado:', credenciais.rows.length, 'registro(s)');
 
-      if (user.rows.length === 0) {
-        console.log(`👤 Criando usuário: ${email}`);
-        const senhaHash = await bcrypt.hash(senha, 10);
-        const newUser = await pool.query(
-          'INSERT INTO users (nome, email, senha_hash, lider) VALUES ($1, $2, $3, $4) RETURNING *',
-          ['Administrador', email, senhaHash, true]
+        if (credenciais.rows.length === 0) {
+          console.log(`👤 Criando credenciais: ${email}`);
+          const senhaHash = await bcrypt.hash(senha, 10);
+          const newCred = await pool.query(
+            'INSERT INTO login_credentials (email, senha_hash, ativo) VALUES ($1, $2, $3) RETURNING *',
+            [email, senhaHash, true]
+          );
+          credenciais = newCred;
+        }
+
+        // Verificar se está bloqueado
+        const cred = credenciais.rows[0];
+        if (cred.bloqueado_ate && new Date(cred.bloqueado_ate) > new Date()) {
+          return { statusCode: 403, headers: headersCors, body: JSON.stringify({ error: 'Conta temporariamente bloqueada. Tente novamente mais tarde.' }) };
+        }
+
+        const valid = await bcrypt.compare(senha, cred.senha_hash);
+        if (!valid) {
+          // Incrementar tentativas falhas
+          const novasTentativas = (cred.tentativas_falhas || 0) + 1;
+          const bloqueadoAte = novasTentativas >= 5
+            ? new Date(Date.now() + 15 * 60 * 1000) // 15 minutos
+            : null;
+
+          await pool.query(
+            'UPDATE login_credentials SET tentativas_falhas = $1, bloqueado_ate = $2 WHERE email = $3',
+            [novasTentativas, bloqueadoAte, email]
+          );
+
+          return { statusCode: 401, headers: headersCors, body: JSON.stringify({ error: 'Senha incorreta' }) };
+        }
+
+        // Login bem-sucedido - resetar tentativas
+        await pool.query(
+          'UPDATE login_credentials SET tentativas_falhas = 0, bloqueado_ate = NULL WHERE email = $1',
+          [email]
         );
-        user = newUser;
+
+        // Buscar dados do usuário na tabela users (se existir)
+        let user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+        const token = jwt.sign({ id: cred.id, email: cred.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        return {
+          statusCode: 200,
+          headers: headersCors,
+          body: JSON.stringify({
+            token,
+            user: {
+              id: cred.id,
+              nome: user.rows[0]?.nome || email.split('@')[0],
+              email: cred.email,
+              lider: true
+            }
+          })
+        };
+      } catch (loginErr) {
+        console.error('❌ Erro no login:', loginErr);
+        throw loginErr; // Propaga para o catch principal
       }
-
-      const valid = await bcrypt.compare(senha, user.rows[0].senha_hash);
-      if (!valid) {
-        return { statusCode: 401, headers: headersCors, body: JSON.stringify({ error: 'Senha incorreta' }) };
-      }
-
-      const token = jwt.sign({ id: user.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-      return {
-        statusCode: 200,
-        headers: headersCors,
-        body: JSON.stringify({
-          token,
-          user: {
-            id: user.rows[0].id,
-            nome: user.rows[0].nome,
-            email: user.rows[0].email,
-            lider: user.rows[0].lider
-          }
-        })
-      };
-    }
 
     if (route === '/api/auth/change-password' && httpMethod === 'POST') {
       const userId = await authMiddleware(headers.authorization?.split(' ')[1]);
@@ -115,15 +166,22 @@ export const handler = async (event, context) => {
       }
 
       const { senhaAtual, novaSenha } = JSON.parse(body);
-      const user = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+      const cred = await pool.query('SELECT * FROM login_credentials WHERE id = $1', [userId]);
 
-      const valid = await bcrypt.compare(senhaAtual, user.rows[0].senha_hash);
+      if (cred.rows.length === 0) {
+        return { statusCode: 404, headers: headersCors, body: JSON.stringify({ error: 'Credenciais não encontradas' }) };
+      }
+
+      const valid = await bcrypt.compare(senhaAtual, cred.rows[0].senha_hash);
       if (!valid) {
         return { statusCode: 401, headers: headersCors, body: JSON.stringify({ error: 'Senha atual incorreta' }) };
       }
 
       const senhaHash = await bcrypt.hash(novaSenha, 10);
-      await pool.query('UPDATE users SET senha_hash = $1 WHERE id = $2', [senhaHash, userId]);
+      await pool.query(
+        'UPDATE login_credentials SET senha_hash = $1, ultima_troca_senha = NOW() WHERE id = $2',
+        [senhaHash, userId]
+      );
 
       return { statusCode: 200, headers: headersCors, body: JSON.stringify({ message: 'Senha alterada com sucesso' }) };
     }
@@ -321,8 +379,12 @@ export const handler = async (event, context) => {
     // Rota não encontrada
     return { statusCode: 404, headers: headersCors, body: JSON.stringify({ error: 'Rota não encontrada' }) };
 
+  }
   } catch (err) {
-    console.error('Erro na API:', err);
-    return { statusCode: 500, headers: headersCors, body: JSON.stringify({ error: err.message }) };
+    console.error('❌ Erro na API:', err);
+    console.error('❌ Stack:', err.stack);
+    console.error('❌ Route:', route);
+    console.error('❌ Body:', body);
+    return { statusCode: 500, headers: headersCors, body: JSON.stringify({ error: err.message, stack: err.stack }) };
   }
 };
