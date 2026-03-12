@@ -6,16 +6,10 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
-# API redirects - devem vir antes do SPA fallback
-[[redirects]]
-  from = "/api/health"
-  to = "/.netlify/functions/health.js"
-  status = 200
-  force = true
-
+# API redirect - usa splat para capturar todo o path
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api.js"
+  to = "/.netlify/functions/api"
   status = 200
   force = true
 

@@ -22,14 +22,30 @@ const authMiddleware = async (token) => {
 
 // Handler principal
 export const handler = async (event, context) => {
-  const { httpMethod, path, headers, body, queryStringParameters } = event;
+  const { httpMethod, path, headers, body, queryStringParameters, rawUrl } = event;
   
-  // No Netlify, path já vem como /api/auth/login por exemplo
-  const route = path;
+  // Forma 1: Usar o splat do redirect (query string)
+  // Quando usamos /api/* -> /api, o * vem em queryStringParameters.splat
+  let route = '/api';
+  if (queryStringParameters?.splat) {
+    route = '/api/' + queryStringParameters.splat;
+  }
+  
+  // Forma 2: Usar rawUrl se disponível
+  if (rawUrl) {
+    try {
+      const url = new URL(rawUrl);
+      route = url.pathname;
+    } catch (e) {
+      // Mantém o route anterior
+    }
+  }
   
   // Log para debug
   console.log('📥 Request:', httpMethod, route);
-  console.log('📥 Body:', body);
+  console.log('📥 Path:', path);
+  console.log('📥 Query params:', JSON.stringify(queryStringParameters));
+  console.log('📥 Body length:', body?.length);
 
   const headersCors = {
     'Access-Control-Allow-Origin': '*',
