@@ -1,0 +1,20 @@
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  root: '.',
+  publicDir: false,
+  server: {
+    port: 5173,
+    open: true,
+  },
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        lider: 'lider.html',
+        'reset-senha': 'reset-senha.html',
+      },
+    },
+  },
+});

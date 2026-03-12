@@ -1,204 +1,205 @@
-# Mantes — Sistema de Gestão de Manutenção
+# 🚀 Mantes - Sistema de Gestão de Manutenção
 
-Sistema de abertura e gerenciamento de Ordens de Serviço (O.S.) para manutenção.
+## Stack Tecnológica
 
----
-
-## 🚀 Stack Tecnológica
-
-**Backend:**
-- Netlify Functions (serverless)
-- Neon PostgreSQL (serverless)
-- JWT (autenticação)
-
-**Frontend:**
-- HTML5, CSS3, JavaScript (vanilla)
-- Design responsivo e moderno
-
-**Deploy:**
-- Netlify (frontend + backend serverless)
-- Neon (PostgreSQL serverless - não expira)
+- **Frontend:** HTML, CSS, JavaScript (ES Modules)
+- **Backend:** Nhost (PostgreSQL + Hasura GraphQL + Auth + Storage)
+- **Deploy:** Netlify (frontend estático) + Nhost (backend)
 
 ---
 
-## ⚡ Início Rápido
+## 📦 Instalação
 
-### 1. Instalar dependências
+### Pré-requisitos
+- Node.js 18+
+- Nhost CLI (`npm install -g nhost`)
 
+### 1. Clonar repositório
+```bash
+git clone https://github.com/fabriciosergioC/mantes.git
+cd mantes
+```
+
+### 2. Instalar dependências
 ```bash
 npm install
 ```
 
-### 2. Configurar variáveis de ambiente
-
+### 3. Configurar variáveis de ambiente
 ```bash
 cp .env.example .env
 ```
 
-Edite `.env` com sua conexão PostgreSQL:
-```env
-DATABASE_URL=postgresql://usuario:senha@host.neon.tech/mantes?sslmode=require
-JWT_SECRET=sua_chave_secreta
-NODE_ENV=production
-```
+Edite `.env` com suas credenciais do Nhost.
 
-### 3. Criar tabelas no banco
+---
 
-Execute o conteúdo de `database.sql` no seu PostgreSQL (Neon).
+## 🏃 Desenvolvimento Local
 
-### 4. Rodar em desenvolvimento
-
+### Iniciar Nhost (Backend)
 ```bash
-# Com Netlify CLI (recomendado - inclui functions)
-netlify dev
-
-# Ou apenas frontend
-npx serve .
+nhost up
 ```
 
-O sistema abrirá em http://localhost:8888 (Netlify) ou http://localhost:3000
+Isso inicia:
+- PostgreSQL (porta 5432)
+- Hasura GraphQL (porta 8080)
+- Nhost Auth (porta 4000)
+- Nhost Storage (porta 8000)
+- Gateway (porta 1337)
 
----
+### Acessar Console
+- **Hasura:** http://localhost:8080
+- **Nhost:** http://localhost:3000
 
-## 📁 Estrutura do Projeto
-
-```
-mantes/
-├── netlify/
-│   └── functions/
-│       └── api.js          # Backend serverless
-├── index.html              # Formulário de abertura de O.S.
-├── lider.html              # Painel do líder
-├── reset-senha.html        # Reset de senha
-├── main.js                 # Lógica do frontend
-├── database.sql            # Script para criar tabelas
-├── netlify.toml            # Configuração Netlify
-├── package.json            # Dependências
-├── .env.example            # Modelo de variáveis
-├── README.md               # Este arquivo
-├── DEPLOY-NETLIFY.md       # Guia de deploy
-└── PASSO-A-PASSO.md        # Guia detalhado passo a passo
-```
-
----
-
-## 🔌 API Endpoints
-
-### Autenticação
-```
-POST /api/auth/login              - Login
-POST /api/auth/change-password    - Alterar senha
-```
-
-### Ordens de Serviço
-```
-GET  /api/os                      - Listar todas
-GET  /api/os/stats                - Estatísticas
-GET  /api/os/next-number          - Próximo número
-GET  /api/os/:id                  - Detalhes de uma OS
-POST /api/os                      - Criar nova OS
-PUT  /api/os/:id                  - Atualizar OS
-DELETE /api/os/:id                - Remover OS
-```
-
----
-
-## 📊 Scripts
-
+### Iniciar Frontend
 ```bash
-npm start          # Produção (não usado no Netlify)
-netlify dev        # Desenvolvimento local com functions
+# Com Vite (recomendado)
+npm run dev
+
+# Ou sirva os arquivos estáticos
+npx http-server -p 8080
 ```
 
 ---
 
-## 🚀 Deploy (Netlify + Neon)
+## 🗄️ Banco de Dados
 
-### 1. Criar Banco no Neon
+### Aplicar Schema
+```bash
+nhost db apply -f nhost/schema.sql
+```
 
-1. https://neon.tech → Login com GitHub
-2. **Create a project**
-3. Nome: `mantes`, Region: Oregon
-4. Copie a connection string (URI)
-
-### 2. Criar Tabelas
-
-1. Neon → SQL Editor
-2. Cole o conteúdo de `database.sql`
-3. Execute
-
-### 3. Deploy no Netlify
-
-1. https://netlify.com → Login com GitHub
-2. **Add new site** → **Import an existing project**
-3. Conecte repositório `mantes`
-4. Configure:
-   - **Build command**: `echo 'Sem build'`
-   - **Publish directory**: `.`
-5. Em **Environment variables**, adicione:
-   - `DATABASE_URL` (connection string do Neon)
-   - `JWT_SECRET`
-   - `NODE_ENV=production`
-6. **Deploy site**
-
-**Guia completo:** `DEPLOY-NETLIFY.md` ou `PASSO-A-PASSO.md`
+### Tabelas
+- `orders` - Ordens de Serviço
+- `profiles` - Perfis de Usuários (vinculado a auth.users)
 
 ---
 
-## 🔐 Login
+## 🔐 Autenticação
 
-No primeiro acesso, use qualquer email/senha. O sistema cria o usuário automaticamente.
+O Nhost Auth gerencia:
+- Registro de usuários
+- Login/Logout
+- Recuperação de senha
+- JWT tokens
+
+### Login
+```javascript
+import { nhost } from './nhost.js';
+
+const { session, user } = await nhost.auth.signIn({
+  email: 'usuario@email.com',
+  password: 'senha123'
+});
+```
 
 ---
 
-## 📦 Dependências
+## 📡 API GraphQL
 
-```json
-{
-  "bcryptjs": "^2.4.3",
-  "dotenv": "^16.3.1",
-  "jsonwebtoken": "^9.0.2",
-  "pg": "^8.11.3"
+### Exemplos
+
+#### Listar OS
+```graphql
+query GetOS {
+  orders(order_by: { data_abertura: desc }) {
+    id
+    numero
+    cliente_id
+    nome_cliente
+    status
+    tipo_solicitacao
+    data_abertura
+  }
+}
+```
+
+#### Criar OS
+```graphql
+mutation CreateOS($object: orders_insert_input!) {
+  insert_orders_one(object: $object) {
+    id
+    numero
+    cliente_id
+    status
+  }
+}
+```
+
+#### Buscar Perfil
+```graphql
+query GetProfile($id: uuid!) {
+  profiles_by_pk(id: $id) {
+    id
+    nome
+    email
+    lider
+  }
 }
 ```
 
 ---
 
-## 🎯 Funcionalidades
+## 🌐 Deploy
 
-- ✅ PostgreSQL serverless (Neon)
-- ✅ Autenticação JWT
-- ✅ Status: Pendente, Aceita, Resolvida, Rejeitada
-- ✅ Filtros e busca por CNPJ
-- ✅ Observações/histórico
-- ✅ Responsivo (mobile-first)
-- ✅ Backend serverless (Netlify Functions)
-- ✅ Não expira (Neon free tier)
+### Frontend (Netlify/Vercel)
+1. Build: `npm run build`
+2. Publique a pasta raiz
+3. Configure as variáveis de ambiente
 
----
-
-## ⚠️ Importante
-
-- **Nunca commit o arquivo `.env`** no Git
-- Use uma **JWT_SECRET** forte
-- Backup do banco periodicamente (Neon tem histórico)
-- Netlify Functions tem limite de 10s de timeout
+### Backend (Nhost Cloud)
+1. Crie projeto em https://app.nhost.io
+2. Obtenha as credenciais
+3. Atualize `.env` com:
+   - `VITE_NHOST_BACKEND_URL`
+   - `VITE_HASURA_ADMIN_SECRET`
 
 ---
 
-## 📝 Deploy Rápido
+## 📋 Variáveis de Ambiente
 
-```bash
-# 1. Criar banco no Neon
-https://neon.tech → Create project
+| Variável | Descrição | Padrão (dev) |
+|----------|-----------|--------------|
+| `VITE_NHOST_BACKEND_URL` | URL do backend Nhost | `http://localhost:1337` |
+| `VITE_HASURA_ADMIN_SECRET` | Segredo do Hasura | `admin-secret-for-local-dev` |
 
-# 2. Criar tabelas
-database.sql → SQL Editor
+---
 
-# 3. Deploy no Netlify
-netlify deploy --prod
+## 🛠️ Comandos
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Inicia Nhost local |
+| `npm run build` | Build (sem build necessário) |
+| `npm run seed` | Aplica seeds no banco |
+
+---
+
+## 📁 Estrutura
+
+```
+mantes/
+├── nhost/
+│   ├── nhost.yaml       # Config Nhost
+│   └── schema.sql       # Schema do banco
+├── nhost.js             # Config do cliente Nhost
+├── main.js              # Lógica frontend
+├── index.html           # Página principal
+├── lider.html           # Área do líder
+├── .env.example         # Exemplo de variáveis
+└── package.json
 ```
 
 ---
 
-**Desenvolvido com ❤️ | Powered by Netlify + Neon**
+## 📞 Suporte
+
+- Nhost Docs: https://docs.nhost.io
+- Hasura Docs: https://hasura.io/docs
+
+---
+
+## 📄 Licença
+
+ISC

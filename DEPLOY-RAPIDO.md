@@ -1,105 +1,110 @@
-# 🚀 GUIA RÁPIDO DE DEPLOY - MANTES
+# 🚀 Deploy Rápido - Mantes + Nhost
 
-## ✅ O que já está pronto:
-- [x] Código no GitHub: https://github.com/fabriciosergioC/mantes
-- [x] Banco Neon configurado
-- [x] Netlify.toml configurado
-- [x] API funcional testada localmente
+## ✅ Pré-requisitos
 
----
-
-## 🎯 DEPLOY EM 3 PASSOS:
-
-### **PASSO 1: Criar site no Netlify**
-
-1. **Acesse:** https://app.netlify.com/start
-2. **Clique:** "Add new site" → "Import an existing project"
-3. **Autorize** o Netlify a acessar seu GitHub
-4. **Selecione** o repositório: `fabriciosergioC/mantes`
-5. **Configure:**
-   ```
-   Base directory: (deixe em branco)
-   Build command: echo 'Sem build'
-   Publish directory: .
-   Functions directory: netlify/functions
-   ```
-6. **Clique:** "Deploy site"
+- Conta no GitHub
+- Conta no Nhost (https://app.nhost.io)
+- Conta no Netlify ou Vercel
 
 ---
 
-### **PASSO 2: Adicionar Variáveis de Ambiente**
+## 📦 1. Backend (Nhost)
 
-No painel do Netlify:
+### Criar Projeto
+1. Acesse https://app.nhost.io
+2. **"Create Project"**
+3. Nome: `mantes`
+4. Escolha região (US East ou Europe)
 
-1. **Vá em:** Site settings → Environment variables
-2. **Clique:** "Add a variable"
-3. **Adicione estas 3 variáveis:**
+### Configurar Banco
+1. No dashboard, clique em **"Hasura Console"**
+2. Vá em **"Data"** → **"SQL"**
+3. Cole o conteúdo de `nhost/schema.sql`
+4. Execute e marque **"Track tables"**
 
-| Nome | Valor |
-|------|-------|
-| `DATABASE_URL` | `postgresql://neondb_owner:npg_SOX1qVtCHnR4@ep-autumn-sun-adsj6mve-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require` |
-| `JWT_SECRET` | `mantes-production-secret-key-2024` |
-| `NODE_ENV` | `production` |
-
----
-
-### **PASSO 3: Aguardar Deploy**
-
-1. O Netlify vai fazer o deploy automático (~2 minutos)
-2. **Acesse:** `https://seu-site-aqui.netlify.app`
-3. **Teste:**
-   - Login: `meydya@mantes.com` / `123456`
-   - Crie uma OS
+### Obter Credenciais
+- **Backend URL:** `https://xxxxx.nhost.app`
+- **Admin Secret:** (em Settings → API)
 
 ---
 
-## 🔄 DEPOIS DO DEPLOY:
+## 🌐 2. Frontend (Netlify)
 
-### Atualizar o site:
+### Preparar
 ```bash
-git add .
-git commit -m "sua mensagem"
-git push
+# Editar .env com credenciais do Nhost
+cp .env.example .env
+
+# Build
+npm run build
 ```
-O Netlify atualiza automaticamente em ~1 minuto!
 
-### Ver logs:
-- **Deploy:** https://app.netlify.com/sites/seu-site/deploys
-- **API:** https://app.netlify.com/sites/seu-site/functions → api → Logs
+### Deploy no Netlify
+1. Acesse https://app.netlify.com
+2. **"Add new site"** → **"Deploy manually"**
+3. Arraste a pasta `dist`
+4. Site publicado!
 
----
-
-## 🎁 BÔNUS: Domínio Personalizado
-
-1. Vá em **Domain settings** no Netlify
-2. Clique em **"Add custom domain"**
-3. Digite: `mantes.seudominio.com.br`
-4. Configure o DNS no seu provedor:
-   ```
-   Tipo: CNAME
-   Nome: mantes (ou @)
-   Valor: seu-site.netlify.app
-   ```
+### Configurar Variáveis
+No Netlify: **Site settings** → **Environment variables**
+- `VITE_NHOST_BACKEND_URL` = `https://xxxxx.nhost.app`
+- `VITE_HASURA_ADMIN_SECRET` = `sua_secret`
 
 ---
 
-## ✅ CHECKLIST FINAL:
+## 🔄 Deploy Automático (GitHub)
 
-- [ ] Site criado no Netlify
-- [ ] Variáveis de ambiente configuradas
-- [ ] Deploy inicial concluído
+### No Netlify:
+1. **"Add new site"** → **"Import an existing project"**
+2. Conecte GitHub
+3. Selecione `fabriciosergioC/mantes`
+4. Configure:
+   - **Build command:** `npm run build`
+   - **Publish directory:** `dist`
+5. Adicione variáveis de ambiente
+
+### Automatismo:
+Todo `git push` atualiza o site automaticamente!
+
+---
+
+## 📝 Comandos Úteis
+
+```bash
+# Desenvolvimento local
+npm run dev
+
+# Build para produção
+npm run build
+
+# Preview local da build
+npm run preview
+```
+
+---
+
+## ✅ Checklist
+
+- [ ] Projeto Nhost criado
+- [ ] Schema aplicado no banco
+- [ ] Permissões configuradas no Hasura
+- [ ] .env com credenciais corretas
+- [ ] Frontend deployado
 - [ ] Login testado
 - [ ] Criação de OS testada
-- [ ] Logs verificados
 
 ---
 
-## 🆘 PRECISA DE AJUDA?
+## 🔗 URLs
 
-1. **Erro 500:** Verifique as variáveis de ambiente
-2. **Banco não conecta:** Libere IP no Neon (0.0.0.0/0)
-3. **API não responde:** Confira os logs das Functions
+| Serviço | URL |
+|---------|-----|
+| Nhost Dashboard | https://app.nhost.io |
+| Hasura Console | https://xxxxx.nhost.app/console |
+| Seu Site | https://seu-site.netlify.app |
 
 ---
 
-**📝 Anote a URL do seu site:** _____________________________
+## 🆘 Problemas?
+
+Veja `CONFIGURACAO-NHOST.md` para detalhes completos.

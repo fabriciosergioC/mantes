@@ -1,27 +1,29 @@
 {
   "name": "mantes",
-  "version": "2.1.0",
-  "description": "Sistema Mantes de Gestão de Manutenção",
+  "version": "3.0.0",
+  "description": "Sistema Mantes de Gestão de Manutenção - Nhost",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "netlify dev",
-    "build": "echo 'Sem build'"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [
     "mantes",
     "manutencao",
-    "postgresql",
-    "netlify"
+    "nhost",
+    "hasura",
+    "graphql"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "dotenv": "^16.3.1",
-    "jsonwebtoken": "^9.0.2",
-    "pg": "^8.11.3"
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
   }
 }
