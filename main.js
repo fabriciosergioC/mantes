@@ -190,28 +190,25 @@ osForm.addEventListener('submit', async (e) => {
   btnSubmit.innerHTML = '<span class="loading"></span> Criando...';
 
   try {
-    const formData = new FormData();
-    formData.append('clienteId', document.getElementById('clienteId').value);
-    formData.append('cnpj', document.getElementById('cnpj').value.replace(/\D/g, ''));
-    formData.append('nomeCliente', document.getElementById('nomeCliente').value);
-    formData.append('telefone', document.getElementById('telefone').value);
-    formData.append('nomeTecnico', document.getElementById('nomeTecnico').value);
-    formData.append('lider', document.getElementById('lider').value);
-    formData.append('emailLider', document.getElementById('emailLider').value);
-    formData.append('tipoSolicitacao', document.getElementById('tipoSolicitacao').value);
-    formData.append('descricao', document.getElementById('descricao').value);
-
-    arquivosSelecionados.forEach(file => {
-      formData.append('arquivos', file);
-    });
+    const data = {
+      cnpj: document.getElementById('cnpj').value.replace(/\D/g, ''),
+      nomeCliente: document.getElementById('nomeCliente').value,
+      telefone: document.getElementById('telefone').value,
+      nomeTecnico: document.getElementById('nomeTecnico').value,
+      lider: document.getElementById('lider').value,
+      emailLider: document.getElementById('emailLider').value,
+      tipoSolicitacao: document.getElementById('tipoSolicitacao').value,
+      descricao: document.getElementById('descricao').value
+    };
 
     const token = localStorage.getItem('@mantes:token');
     const res = await fetch(`${API_BASE}/os`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       },
-      body: formData
+      body: JSON.stringify(data)
     });
 
     const os = await res.json();

@@ -103,19 +103,30 @@ export const handler = async (event) => {
     // OS - Criar
     if (route === '/api/os' && httpMethod === 'POST') {
       const data = parsedBody || {};
-      
-      const last = await pool.query('SELECT numero FROM orders ORDER BY numero DESC LIMIT 1');
-      let next = 1001;
-      if (last.rows.length > 0) {
-        next = parseInt(last.rows[0].numero.replace('OS-', '')) + 1;
+
+      // Gerar próximo número da OS
+      const lastNum = await pool.query('SELECT numero FROM orders ORDER BY numero DESC LIMIT 1');
+      let nextNum = 1001;
+      if (lastNum.rows.length > 0) {
+        nextNum = parseInt(lastNum.rows[0].numero.replace('OS-', '')) + 1;
       }
-      
+      const numero = 'OS-' + String(nextNum).padStart(5, '0');
+
+      // Gerar cliente_id automático (CLT + número sequencial)
+      const lastCliente = await pool.query('SELECT cliente_id FROM orders WHERE cliente_id IS NOT NULL ORDER BY cliente_id DESC LIMIT 1');
+      let nextCliente = 1;
+      if (lastCliente.rows.length > 0 && lastCliente.rows[0].cliente_id) {
+        const lastId = parseInt(lastCliente.rows[0].cliente_id.replace('CLT-', ''));
+        nextCliente = lastId + 1;
+      }
+      const clienteId = 'CLT-' + String(nextCliente).padStart(5, '0');
+
       const result = await pool.query(
         `INSERT INTO orders (numero, cliente_id, cnpj, nome_cliente, telefone, nome_tecnico, lider, email_lider, tipo_solicitacao, descricao, status)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending') RETURNING *`,
-        [`OS-${String(next).padStart(5, '0')}`, data.clienteId, data.cnpj, data.nomeCliente, data.telefone, data.nomeTecnico, data.lider, data.emailLider, data.tipoSolicitacao, data.descricao]
+        [numero, clienteId, data.cnpj, data.nomeCliente, data.telefone, data.nomeTecnico, data.lider, data.emailLider, data.tipoSolicitacao, data.descricao]
       );
-      
+
       return { statusCode: 201, headers: headersCors, body: JSON.stringify(result.rows[0]) };
     }
 
