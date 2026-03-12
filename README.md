@@ -7,17 +7,17 @@ Sistema de abertura e gerenciamento de Ordens de Serviço (O.S.) para manutenç�
 ## 🚀 Stack Tecnológica
 
 **Backend:**
-- Node.js + Express
-- PostgreSQL (Render)
+- Netlify Functions (serverless)
+- Neon PostgreSQL (serverless)
 - JWT (autenticação)
-- Multer (upload de arquivos)
 
 **Frontend:**
 - HTML5, CSS3, JavaScript (vanilla)
 - Design responsivo e moderno
 
 **Deploy:**
-- Render (backend + frontend + banco)
+- Netlify (frontend + backend serverless)
+- Neon (PostgreSQL serverless - não expira)
 
 ---
 
@@ -37,22 +37,26 @@ cp .env.example .env
 
 Edite `.env` com sua conexão PostgreSQL:
 ```env
-DATABASE_URL=postgresql://usuario:senha@host/mantes
+DATABASE_URL=postgresql://usuario:senha@host.neon.tech/mantes?sslmode=require
 JWT_SECRET=sua_chave_secreta
-PORT=3000
+NODE_ENV=production
 ```
 
 ### 3. Criar tabelas no banco
 
-Execute o conteúdo de `database.sql` no seu PostgreSQL.
+Execute o conteúdo de `database.sql` no seu PostgreSQL (Neon).
 
 ### 4. Rodar em desenvolvimento
 
 ```bash
-npm run dev
+# Com Netlify CLI (recomendado - inclui functions)
+netlify dev
+
+# Ou apenas frontend
+npx serve .
 ```
 
-O sistema abrirá em http://localhost:3000
+O sistema abrirá em http://localhost:8888 (Netlify) ou http://localhost:3000
 
 ---
 
@@ -60,15 +64,20 @@ O sistema abrirá em http://localhost:3000
 
 ```
 mantes/
-├── server.js           # Backend Express + PostgreSQL
-├── main.js             # Lógica do frontend
-├── index.html          # Formulário de abertura de O.S.
-├── lider.html          # Painel do líder
-├── database.sql        # Script para criar tabelas
-├── package.json        # Dependências
-├── render.yaml         # Configuração Render
-├── .env.example        # Modelo de variáveis
-└── README.md
+├── netlify/
+│   └── functions/
+│       └── api.js          # Backend serverless
+├── index.html              # Formulário de abertura de O.S.
+├── lider.html              # Painel do líder
+├── reset-senha.html        # Reset de senha
+├── main.js                 # Lógica do frontend
+├── database.sql            # Script para criar tabelas
+├── netlify.toml            # Configuração Netlify
+├── package.json            # Dependências
+├── .env.example            # Modelo de variáveis
+├── README.md               # Este arquivo
+├── DEPLOY-NETLIFY.md       # Guia de deploy
+└── PASSO-A-PASSO.md        # Guia detalhado passo a passo
 ```
 
 ---
@@ -97,39 +106,42 @@ DELETE /api/os/:id                - Remover OS
 ## 📊 Scripts
 
 ```bash
-npm start          # Produção
-npm run dev        # Desenvolvimento
+npm start          # Produção (não usado no Netlify)
+netlify dev        # Desenvolvimento local com functions
 ```
 
 ---
 
-## 🚀 Deploy no Render
+## 🚀 Deploy (Netlify + Neon)
 
-### 1. Criar PostgreSQL
+### 1. Criar Banco no Neon
 
-1. https://render.com → Login
-2. **New +** → **PostgreSQL**
-3. Nome: `mantesdb`, Region: Oregon, Plan: Free
+1. https://neon.tech → Login com GitHub
+2. **Create a project**
+3. Nome: `mantes`, Region: Oregon
+4. Copie a connection string (URI)
 
 ### 2. Criar Tabelas
 
-1. Dashboard do PostgreSQL → **SQL**
+1. Neon → SQL Editor
 2. Cole o conteúdo de `database.sql`
-3. Run
+3. Execute
 
-### 3. Deploy Backend
+### 3. Deploy no Netlify
 
-1. **New +** → **Web Service**
-2. Conecte repositório `mantes`
-3. Build: `npm install`, Start: `npm start`
-4. Variáveis: `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV`
+1. https://netlify.com → Login com GitHub
+2. **Add new site** → **Import an existing project**
+3. Conecte repositório `mantes`
+4. Configure:
+   - **Build command**: `echo 'Sem build'`
+   - **Publish directory**: `.`
+5. Em **Environment variables**, adicione:
+   - `DATABASE_URL` (connection string do Neon)
+   - `JWT_SECRET`
+   - `NODE_ENV=production`
+6. **Deploy site**
 
-### 4. Deploy Frontend
-
-1. **New +** → **Static Site**
-2. Build: `echo "Sem build"`, Publish: `.`
-
-**Guia completo:** `DEPLOY-RENDER.md`
+**Guia completo:** `DEPLOY-NETLIFY.md` ou `PASSO-A-PASSO.md`
 
 ---
 
@@ -144,11 +156,8 @@ No primeiro acesso, use qualquer email/senha. O sistema cria o usuário automati
 ```json
 {
   "bcryptjs": "^2.4.3",
-  "cors": "^2.8.5",
   "dotenv": "^16.3.1",
-  "express": "^4.18.2",
   "jsonwebtoken": "^9.0.2",
-  "multer": "^1.4.5-lts.1",
   "pg": "^8.11.3"
 }
 ```
@@ -157,13 +166,14 @@ No primeiro acesso, use qualquer email/senha. O sistema cria o usuário automati
 
 ## 🎯 Funcionalidades
 
-- ✅ PostgreSQL no Render
-- ✅ Upload de arquivos (até 10MB)
+- ✅ PostgreSQL serverless (Neon)
 - ✅ Autenticação JWT
 - ✅ Status: Pendente, Aceita, Resolvida, Rejeitada
-- ✅ Filtros e busca
+- ✅ Filtros e busca por CNPJ
 - ✅ Observações/histórico
 - ✅ Responsivo (mobile-first)
+- ✅ Backend serverless (Netlify Functions)
+- ✅ Não expira (Neon free tier)
 
 ---
 
@@ -171,23 +181,24 @@ No primeiro acesso, use qualquer email/senha. O sistema cria o usuário automati
 
 - **Nunca commit o arquivo `.env`** no Git
 - Use uma **JWT_SECRET** forte
-- Backup do banco periodicamente
+- Backup do banco periodicamente (Neon tem histórico)
+- Netlify Functions tem limite de 10s de timeout
 
 ---
 
 ## 📝 Deploy Rápido
 
 ```bash
-# 1. Render PostgreSQL
-https://render.com → New PostgreSQL
+# 1. Criar banco no Neon
+https://neon.tech → Create project
 
 # 2. Criar tabelas
-database.sql → SQL tab
+database.sql → SQL Editor
 
-# 3. Deploy
-Web Service + Static Site
+# 3. Deploy no Netlify
+netlify deploy --prod
 ```
 
 ---
 
-**Desenvolvido com ❤️ | Powered by Render + PostgreSQL**
+**Desenvolvido com ❤️ | Powered by Netlify + Neon**

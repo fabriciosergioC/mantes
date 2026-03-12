@@ -999,12 +999,10 @@
 
 <script>
   // ── CONFIGURAÇÃO DA API ──────────────────────────────────────
-  // URL dinâmica: localhost, Vercel ou Render
-  const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000/api' 
-    : window.location.hostname.includes('vercel')
-      ? '/api'  // Vercel usa proxy interno
-      : 'https://mantes-backend.onrender.com/api';
+  // URL dinâmica: localhost ou Netlify Functions
+  const API_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000/api'
+    : '/api';
   let authToken = null;
   let currentUser = null;
 

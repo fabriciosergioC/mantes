@@ -1,9 +1,9 @@
 // Mantes Frontend - API Integration
 
 // Configuração da API
-const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3000' 
-  : window.location.origin;
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000'
+  : '';
 
 // Elementos DOM
 const loginCard = document.getElementById('loginCard');

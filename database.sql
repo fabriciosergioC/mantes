@@ -1,5 +1,5 @@
--- Script SQL para criar tabelas no PostgreSQL (Render)
--- Execute no dashboard do Render → PostgreSQL → SQL
+-- Script SQL para criar tabelas no PostgreSQL
+-- Execute no dashboard do seu banco (Render, Neon, Supabase, etc.)
 
 -- Tabela de usuários
 CREATE TABLE IF NOT EXISTS users (

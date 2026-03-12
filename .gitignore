@@ -20,6 +20,9 @@ build/
 uploads/
 *.log
 
+# Netlify
+.netlify/
+
 # IDE
 .vscode/
 .idea/
