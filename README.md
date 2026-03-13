@@ -43,38 +43,106 @@ npm run seed
 
 ---
 
-## 🌐 Deploy no Railway (Produção)
+## 🌐 Deploy no Render (Grátis)
 
-### 1. Acesse https://railway.app e faça login com GitHub
+### 🚀 Opção 1: Deploy Automático (Via CLI)
 
-### 2. Crie um novo projeto
-- Clique em **"New Project"**
-- Selecione **"Deploy from GitHub repo"**
-- Escolha o repositório `mantes`
-
-### 3. Adicione o MongoDB
-- No painel do projeto, clique em **"New"** → **"Database"** → **"MongoDB"**
-- Aguarde a criação do banco
-
-### 4. Configure as variáveis de ambiente
-Clique no serviço MongoDB e copie a **Connection String**. Depois:
-- Vá no serviço principal (Node.js)
-- Clique em **"Variables"**
-- Adicione:
-  - `MONGODB_URI` = (cole a connection string do MongoDB)
-  - `JWT_SECRET` = `secreto-producao-aleatorio`
-  - `PORT` = `8080`
-
-### 5. Deploy automático
-O Railway fará o build e deploy automaticamente!
-- **Frontend:** `https://seu-projeto.up.railway.app`
-- **API:** `https://seu-projeto.up.railway.app/api`
-
-### 6. Criar usuário admin
-Use a CLI do Railway ou acesse o console e rode:
 ```bash
-npm run seed
+# 1. Instale a Render CLI
+npm install -g @render-cli/cli
+
+# 2. Faça login
+render login
+
+# 3. Rode o deploy
+npm run deploy
 ```
+
+O script fará:
+- ✅ Login no Render
+- ✅ Deploy automático
+- ✅ Configuração inicial
+
+**Após o deploy:**
+1. Acesse https://dashboard.render.com
+2. Vá em **"Environment Variables"** do serviço
+3. Adicione `MONGODB_URI` com sua connection string do MongoDB Atlas
+4. No **Console** do serviço, rode: `npm run seed`
+
+---
+
+### 📋 Opção 2: Deploy Manual (Pelo Site)
+
+**1. Crie sua conta**
+- Acesse https://render.com
+- Faça login com GitHub
+
+**2. Crie um novo serviço**
+- Clique em **"New +"** → **"Web Service"**
+- Conecte seu repositório GitHub (`mantes`)
+
+**3. Configure o serviço**
+| Campo | Valor |
+|-------|-------|
+| **Name** | `mantes` |
+| **Region** | Oregon (ou mais próximo) |
+| **Branch** | `main` |
+| **Root Directory** | (deixe vazio) |
+| **Runtime** | `Node` |
+| **Build Command** | `npm install && npm run build` |
+| **Start Command** | `npm start` |
+| **Instance Type** | **Free** |
+
+**4. Adicione as Variáveis de Ambiente**
+Em **"Environment"**, adicione:
+```
+NODE_ENV=production
+PORT=8080
+CORS_ORIGIN=*
+JWT_SECRET=secreto-producao-aleatorio
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/mantes
+```
+
+**5. Deploy!**
+- Clique em **"Create Web Service"**
+- Aguarde o deploy (3-5 minutos)
+- URL: `https://mantes-xxxx.onrender.com`
+
+**6. Criar usuário admin**
+- Vá em **"Console"** no painel do Render
+- Rode: `npm run seed`
+
+---
+
+### 🗄️ MongoDB Atlas (Configuração Necessária)
+
+Para o deploy funcionar, configure o MongoDB Atlas:
+
+1. **Libere todos os IPs**
+   - Vá em **"Network Access"** no Atlas
+   - Adicione `0.0.0.0/0` (permitir todos)
+
+2. **Copie a Connection String**
+   - Vá em **"Clusters"** → **"Connect"**
+   - Escolha **"Connect your application"**
+   - Copie a string (ex: `mongodb+srv://user:pass@cluster.mongodb.net/mantes`)
+
+3. **Cole no Render**
+   - Environment Variables → `MONGODB_URI`
+
+---
+
+### ⚠️ Limitações do Plano Free
+
+| Recurso | Limite |
+|---------|--------|
+| **Horas/mês** | 750 horas (suficiente para 1 app 24/7) |
+| **RAM** | 512 MB |
+| **CPU** | 0.5 vCPU |
+| **Sleep** | Após 15 min de inatividade |
+| **Builds/mês** | 100 horas |
+
+**Dica:** O app "dorme" após 15 min sem acesso. A primeira requisição após o sleep leva ~30 segundos para responder.
 
 ---
 

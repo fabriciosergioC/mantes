@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "seed": "node server/seed.js",
     "start": "node server/index.js",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "deploy": "node deploy-render.js",
+    "deploy:render": "node deploy-render.js"
   },
   "keywords": ["mantes", "manutencao", "mongodb"],
   "author": "",
