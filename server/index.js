@@ -44,7 +44,13 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-  console.log(`📦 MongoDB Atlas conectado`);
-});
+// Exporta o app para Vercel (serverless)
+export { app };
+
+// Apenas executa o servidor se não estiver em ambiente serverless
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+    console.log(`📦 MongoDB Atlas conectado`);
+  });
+}

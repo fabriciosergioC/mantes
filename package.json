@@ -12,7 +12,7 @@
     "seed": "node server/seed.js",
     "start": "node server/index.js",
     "postinstall": "npm run build",
-    "deploy": "node deploy-vercel.js"
+    "vercel-build": "npm run build"
   },
   "keywords": ["mantes", "manutencao", "mongodb"],
   "author": "",
