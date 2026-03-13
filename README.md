@@ -43,106 +43,79 @@ npm run seed
 
 ---
 
-## 🌐 Deploy no Render (Grátis)
+## 🌐 Deploy na Vercel (Grátis - Sem Cartão)
 
-### 🚀 Opção 1: Deploy Automático (Via CLI)
+### 🚀 Deploy Automático (Recomendado)
 
 ```bash
-# 1. Instale a Render CLI
-npm install -g @render-cli/cli
-
-# 2. Faça login
-render login
-
-# 3. Rode o deploy
+# 1. Rode o deploy
 npm run deploy
 ```
 
 O script fará:
-- ✅ Login no Render
+- ✅ Instalar Vercel CLI
+- ✅ Login na Vercel
 - ✅ Deploy automático
-- ✅ Configuração inicial
 
 **Após o deploy:**
-1. Acesse https://dashboard.render.com
-2. Vá em **"Environment Variables"** do serviço
-3. Adicione `MONGODB_URI` com sua connection string do MongoDB Atlas
-4. No **Console** do serviço, rode: `npm run seed`
+1. Acesse https://vercel.com/dashboard
+2. Vá em **"Settings"** → **"Environment Variables"**
+3. Adicione:
+   - `MONGODB_URI` = `mongodb+srv://fabricio:root@cluster0.i6kny0w.mongodb.net/mantes?retryWrites=true&w=majority`
+   - `JWT_SECRET` = `mantes-secret-2026`
+4. Redeploy: `vercel --prod`
+5. Crie admin: **Functions** → **Console** → `npm run seed`
 
 ---
 
-### 📋 Opção 2: Deploy Manual (Pelo Site)
+### 📋 Deploy Manual (Pelo Site)
 
-**1. Crie sua conta**
-- Acesse https://render.com
-- Faça login com GitHub
+1. **Acesse** https://vercel.com e login com GitHub
 
-**2. Crie um novo serviço**
-- Clique em **"New +"** → **"Web Service"**
-- Conecte seu repositório GitHub (`mantes`)
+2. **Importe o repositório**
+   - Clique em **"Add New..."** → **"Project"**
+   - Selecione `mantes`
+   - Clique **"Import"**
 
-**3. Configure o serviço**
-| Campo | Valor |
-|-------|-------|
-| **Name** | `mantes` |
-| **Region** | Oregon (ou mais próximo) |
-| **Branch** | `main` |
-| **Root Directory** | (deixe vazio) |
-| **Runtime** | `Node` |
-| **Build Command** | `npm install && npm run build` |
-| **Start Command** | `npm start` |
-| **Instance Type** | **Free** |
+3. **Configure (opcional)**
+   - Framework Preset: `Other`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Install Command: `npm install`
 
-**4. Adicione as Variáveis de Ambiente**
-Em **"Environment"**, adicione:
-```
-NODE_ENV=production
-PORT=8080
-CORS_ORIGIN=*
-JWT_SECRET=secreto-producao-aleatorio
-MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/mantes
-```
+4. **Adicione Variáveis de Ambiente**
+   ```
+   MONGODB_URI = mongodb+srv://fabricio:root@cluster0.i6kny0w.mongodb.net/mantes?retryWrites=true&w=majority
+   JWT_SECRET = mantes-secret-2026
+   NODE_ENV = production
+   ```
 
-**5. Deploy!**
-- Clique em **"Create Web Service"**
-- Aguarde o deploy (3-5 minutos)
-- URL: `https://mantes-xxxx.onrender.com`
+5. **Deploy!**
+   - Clique em **"Deploy"**
+   - URL: `https://mantes-xxxx.vercel.app`
 
-**6. Criar usuário admin**
-- Vá em **"Console"** no painel do Render
-- Rode: `npm run seed`
+6. **Criar admin**
+   - Vá em **Functions** → **Console**
+   - Rode: `npm run seed`
 
 ---
 
-### 🗄️ MongoDB Atlas (Configuração Necessária)
+### ⚠️ MongoDB Atlas (Importante)
 
-Para o deploy funcionar, configure o MongoDB Atlas:
-
-1. **Libere todos os IPs**
-   - Vá em **"Network Access"** no Atlas
-   - Adicione `0.0.0.0/0` (permitir todos)
-
-2. **Copie a Connection String**
-   - Vá em **"Clusters"** → **"Connect"**
-   - Escolha **"Connect your application"**
-   - Copie a string (ex: `mongodb+srv://user:pass@cluster.mongodb.net/mantes`)
-
-3. **Cole no Render**
-   - Environment Variables → `MONGODB_URI`
+Libere todos os IPs no Atlas:
+1. **Network Access** → **Add IP Address**
+2. **Allow Access from Anywhere** (`0.0.0.0/0`)
 
 ---
 
-### ⚠️ Limitações do Plano Free
+### 📊 Limites do Plano Free
 
 | Recurso | Limite |
 |---------|--------|
-| **Horas/mês** | 750 horas (suficiente para 1 app 24/7) |
-| **RAM** | 512 MB |
-| **CPU** | 0.5 vCPU |
-| **Sleep** | Após 15 min de inatividade |
-| **Builds/mês** | 100 horas |
-
-**Dica:** O app "dorme" após 15 min sem acesso. A primeira requisição após o sleep leva ~30 segundos para responder.
+| **Bandwidth** | 100 GB/mês |
+| **Serverless Executions** | 100 GB-horas |
+| **Tempo máx. função** | 10 segundos |
+| **Domínios** | Ilimitados |
 
 ---
 
