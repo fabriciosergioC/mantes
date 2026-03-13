@@ -1,178 +1,45 @@
 # 🚀 Mantes - Sistema de Gestão de Manutenção
 
-## Stack Tecnológica
-
-- **Frontend:** HTML, CSS, JavaScript (ES Modules)
-- **Backend:** Nhost (PostgreSQL + Hasura GraphQL + Auth + Storage)
-- **Deploy:** Netlify (frontend estático) + Nhost (backend)
+Sistema moderno para gestão de ordens de serviço com **MongoDB Atlas**.
 
 ---
 
 ## 📦 Instalação
 
-### Pré-requisitos
-- Node.js 18+
-- Nhost CLI (`npm install -g nhost`)
-
-### 1. Clonar repositório
-```bash
-git clone https://github.com/fabriciosergioC/mantes.git
-cd mantes
-```
-
-### 2. Instalar dependências
 ```bash
 npm install
 ```
 
-### 3. Configurar variáveis de ambiente
-```bash
-cp .env.example .env
+## ⚙️ Configuração
+
+Edite o arquivo `.env` com suas credenciais do MongoDB Atlas:
+
+```env
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/mantes
+JWT_SECRET=seu_secret_aqui
+PORT=3000
 ```
 
-Edite `.env` com suas credenciais do Nhost.
+## 🏃 Rodar o Projeto
 
----
-
-## 🏃 Desenvolvimento Local
-
-### Iniciar Nhost (Backend)
 ```bash
-nhost up
-```
-
-Isso inicia:
-- PostgreSQL (porta 5432)
-- Hasura GraphQL (porta 8080)
-- Nhost Auth (porta 4000)
-- Nhost Storage (porta 8000)
-- Gateway (porta 1337)
-
-### Acessar Console
-- **Hasura:** http://localhost:8080
-- **Nhost:** http://localhost:3000
-
-### Iniciar Frontend
-```bash
-# Com Vite (recomendado)
 npm run dev
-
-# Ou sirva os arquivos estáticos
-npx http-server -p 8080
 ```
 
----
+- **Frontend:** http://localhost:5173
+- **API:** http://localhost:3000
 
 ## 🗄️ Banco de Dados
 
-### Aplicar Schema
+### Inicializar (criar usuário admin)
+
 ```bash
-nhost db apply -f nhost/schema.sql
+npm run seed
 ```
 
-### Tabelas
-- `orders` - Ordens de Serviço
-- `profiles` - Perfis de Usuários (vinculado a auth.users)
-
----
-
-## 🔐 Autenticação
-
-O Nhost Auth gerencia:
-- Registro de usuários
-- Login/Logout
-- Recuperação de senha
-- JWT tokens
-
-### Login
-```javascript
-import { nhost } from './nhost.js';
-
-const { session, user } = await nhost.auth.signIn({
-  email: 'usuario@email.com',
-  password: 'senha123'
-});
-```
-
----
-
-## 📡 API GraphQL
-
-### Exemplos
-
-#### Listar OS
-```graphql
-query GetOS {
-  orders(order_by: { data_abertura: desc }) {
-    id
-    numero
-    cliente_id
-    nome_cliente
-    status
-    tipo_solicitacao
-    data_abertura
-  }
-}
-```
-
-#### Criar OS
-```graphql
-mutation CreateOS($object: orders_insert_input!) {
-  insert_orders_one(object: $object) {
-    id
-    numero
-    cliente_id
-    status
-  }
-}
-```
-
-#### Buscar Perfil
-```graphql
-query GetProfile($id: uuid!) {
-  profiles_by_pk(id: $id) {
-    id
-    nome
-    email
-    lider
-  }
-}
-```
-
----
-
-## 🌐 Deploy
-
-### Frontend (Netlify/Vercel)
-1. Build: `npm run build`
-2. Publique a pasta raiz
-3. Configure as variáveis de ambiente
-
-### Backend (Nhost Cloud)
-1. Crie projeto em https://app.nhost.io
-2. Obtenha as credenciais
-3. Atualize `.env` com:
-   - `VITE_NHOST_BACKEND_URL`
-   - `VITE_HASURA_ADMIN_SECRET`
-
----
-
-## 📋 Variáveis de Ambiente
-
-| Variável | Descrição | Padrão (dev) |
-|----------|-----------|--------------|
-| `VITE_NHOST_BACKEND_URL` | URL do backend Nhost | `http://localhost:1337` |
-| `VITE_HASURA_ADMIN_SECRET` | Segredo do Hasura | `admin-secret-for-local-dev` |
-
----
-
-## 🛠️ Comandos
-
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Inicia Nhost local |
-| `npm run build` | Build (sem build necessário) |
-| `npm run seed` | Aplica seeds no banco |
+**Usuário padrão:**
+- Email: `admin@mantes.com`
+- Senha: `Mantes2026!`
 
 ---
 
@@ -180,26 +47,46 @@ query GetProfile($id: uuid!) {
 
 ```
 mantes/
-├── nhost/
-│   ├── nhost.yaml       # Config Nhost
-│   └── schema.sql       # Schema do banco
-├── nhost.js             # Config do cliente Nhost
-├── main.js              # Lógica frontend
-├── index.html           # Página principal
-├── lider.html           # Área do líder
-├── .env.example         # Exemplo de variáveis
-└── package.json
+├── server/
+│   ├── index.js        # Servidor Express
+│   ├── db.js           # Conexão MongoDB
+│   ├── auth.js         # Autenticação
+│   ├── seed.js         # Script de inicialização
+│   └── routes/
+│       ├── auth.js     # Rotas de autenticação
+│       └── os.js       # Rotas de OS
+├── api.js              # Cliente API frontend
+├── main.js             # Lógica frontend
+├── index.html          # Página principal
+└── .env                # Variáveis de ambiente
 ```
 
 ---
 
-## 📞 Suporte
+## 🔧 API Endpoints
 
-- Nhost Docs: https://docs.nhost.io
-- Hasura Docs: https://hasura.io/docs
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/register` | Registro |
+| GET | `/api/auth/me` | Dados do usuário |
+| GET | `/api/os` | Listar OS |
+| POST | `/api/os` | Criar OS |
+| GET | `/api/os/:id` | Buscar OS |
+| PUT | `/api/os/:id` | Atualizar OS |
+| DELETE | `/api/os/:id` | Deletar OS |
 
 ---
 
-## 📄 Licença
+## 🛠️ Tech Stack
+
+- **Frontend:** HTML, CSS, JavaScript (Vite)
+- **Backend:** Node.js, Express
+- **Banco:** MongoDB Atlas
+- **Auth:** JWT + bcrypt
+
+---
+
+## 📝 License
 
 ISC

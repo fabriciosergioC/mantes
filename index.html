@@ -327,7 +327,7 @@
       </div>
 
       <h2>📋 Nova Ordem de Serviço</h2>
-      
+
       <div id="formAlert" class="alert"></div>
 
       <form id="osForm" enctype="multipart/form-data">
@@ -391,7 +391,7 @@
         <div class="form-group">
           <label>Anexos (fotos, documentos)</label>
           <div class="file-upload" id="fileUpload">
-            <input type="file" id="arquivos" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+            <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
             <div class="file-upload-icon">📎</div>
             <div>Arraste arquivos ou clique para selecionar</div>
             <div style="color: var(--muted); font-size: 12px; margin-top: 8px;">
@@ -408,6 +408,7 @@
     </div>
   </div>
 
+  <script type="module" src="/api.js"></script>
   <script type="module" src="/main.js"></script>
 </body>
 </html>
