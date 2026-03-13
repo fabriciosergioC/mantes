@@ -43,6 +43,41 @@ npm run seed
 
 ---
 
+## 🌐 Deploy no Railway (Produção)
+
+### 1. Acesse https://railway.app e faça login com GitHub
+
+### 2. Crie um novo projeto
+- Clique em **"New Project"**
+- Selecione **"Deploy from GitHub repo"**
+- Escolha o repositório `mantes`
+
+### 3. Adicione o MongoDB
+- No painel do projeto, clique em **"New"** → **"Database"** → **"MongoDB"**
+- Aguarde a criação do banco
+
+### 4. Configure as variáveis de ambiente
+Clique no serviço MongoDB e copie a **Connection String**. Depois:
+- Vá no serviço principal (Node.js)
+- Clique em **"Variables"**
+- Adicione:
+  - `MONGODB_URI` = (cole a connection string do MongoDB)
+  - `JWT_SECRET` = `secreto-producao-aleatorio`
+  - `PORT` = `8080`
+
+### 5. Deploy automático
+O Railway fará o build e deploy automaticamente!
+- **Frontend:** `https://seu-projeto.up.railway.app`
+- **API:** `https://seu-projeto.up.railway.app/api`
+
+### 6. Criar usuário admin
+Use a CLI do Railway ou acesse o console e rode:
+```bash
+npm run seed
+```
+
+---
+
 ## 📁 Estrutura
 
 ```

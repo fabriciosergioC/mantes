@@ -9,7 +9,9 @@
     "client": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "seed": "node server/seed.js"
+    "seed": "node server/seed.js",
+    "start": "node server/index.js",
+    "postinstall": "npm run build"
   },
   "keywords": ["mantes", "manutencao", "mongodb"],
   "author": "",
@@ -25,5 +27,8 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "vite": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

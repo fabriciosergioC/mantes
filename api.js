@@ -1,5 +1,6 @@
 // API Configuration
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Em produção, a API está no mesmo domínio (/api)
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Auth functions
 export const auth = {
